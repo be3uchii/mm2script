@@ -1,0 +1,904 @@
+local AnimationChanger = Instance.new("ScreenGui")
+local Main = Instance.new("Frame")
+local TopBar = Instance.new("Frame")
+local Toggle = Instance.new("TextButton")
+local ScrollFrame = Instance.new("ScrollingFrame")
+local UIListLayout = Instance.new("UIListLayout")
+local A_Astronaut = Instance.new("TextButton")
+local A_Bubbly = Instance.new("TextButton")
+local A_Cartoony = Instance.new("TextButton")
+local A_Elder = Instance.new("TextButton")
+local A_Knight = Instance.new("TextButton")
+local A_Levitation = Instance.new("TextButton")
+local A_Mage = Instance.new("TextButton")
+local A_Ninja = Instance.new("TextButton")
+local A_Pirate = Instance.new("TextButton")
+local A_Robot = Instance.new("TextButton")
+local A_Stylish = Instance.new("TextButton")
+local A_SuperHero = Instance.new("TextButton")
+local A_Toy = Instance.new("TextButton")
+local A_Vampire = Instance.new("TextButton")
+local A_Werewolf = Instance.new("TextButton")
+local A_Zombie = Instance.new("TextButton")
+local A_Patrol = Instance.new("TextButton")
+local A_Confident = Instance.new("TextButton")
+local A_Popstar = Instance.new("TextButton")
+local A_Cowboy = Instance.new("TextButton")
+local A_Ghost = Instance.new("TextButton")
+local A_Sneaky = Instance.new("TextButton")
+local A_Princess = Instance.new("TextButton")
+local A_None = Instance.new("TextButton")
+local A_Anthro = Instance.new("TextButton")
+local Animate = game.Players.LocalPlayer.Character.Animate
+local isMinimized = false
+local lastAnimation = nil
+
+AnimationChanger.Name = "AnimationChanger"
+AnimationChanger.Parent = game:WaitForChild("CoreGui")
+AnimationChanger.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Main.Name = "Main"
+Main.Parent = AnimationChanger
+Main.BackgroundColor3 = Color3.new(0.278431, 0.278431, 0.278431)
+Main.BorderSizePixel = 0
+Main.Position = UDim2.new(0.422, 0, 0.284, 0)
+Main.Size = UDim2.new(0, 150, 0, 400)
+Main.Active = true
+Main.Draggable = true
+
+TopBar.Name = "TopBar"
+TopBar.Parent = Main
+TopBar.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+TopBar.BorderSizePixel = 0
+TopBar.Size = UDim2.new(0, 150, 0, 30)
+
+Toggle.Name = "Toggle"
+Toggle.Parent = TopBar
+Toggle.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+Toggle.BorderSizePixel = 0
+Toggle.Position = UDim2.new(0.8, 0, 0, 0)
+Toggle.Size = UDim2.new(0, 30, 0, 30)
+Toggle.Font = Enum.Font.SciFi
+Toggle.Text = "-"
+Toggle.TextColor3 = Color3.new(1, 0, 0.0156863)
+Toggle.TextSize = 20
+Toggle.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        ScrollFrame.Visible = false
+        Main.Size = UDim2.new(0, 150, 0, 30)
+        Toggle.Text = "+"
+    else
+        ScrollFrame.Visible = true
+        Main.Size = UDim2.new(0, 150, 0, 400)
+        Toggle.Text = "-"
+    end
+end)
+
+ScrollFrame.Name = "ScrollFrame"
+ScrollFrame.Parent = Main
+ScrollFrame.BackgroundColor3 = Color3.new(0.278431, 0.278431, 0.278431)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.BorderSizePixel = 0
+ScrollFrame.Position = UDim2.new(0, 0, 0.075, 0)
+ScrollFrame.Size = UDim2.new(1, 0, 0.925, 0)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 780)
+ScrollFrame.ScrollBarThickness = 8
+
+UIListLayout.Parent = ScrollFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 5)
+
+A_Astronaut.Name = "A_Astronaut"
+A_Astronaut.Parent = ScrollFrame
+A_Astronaut.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Astronaut.BorderSizePixel = 0
+A_Astronaut.Size = UDim2.new(0, 150, 0, 30)
+A_Astronaut.Font = Enum.Font.SciFi
+A_Astronaut.Text = "Astronaut"
+A_Astronaut.TextColor3 = Color3.new(1, 1, 1)
+A_Astronaut.TextSize = 20
+A_Astronaut.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=891621366"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=891633237"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=891667138"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=891636393"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=891627522"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=891609353"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=891617961"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Bubbly.Name = "A_Bubbly"
+A_Bubbly.Parent = ScrollFrame
+A_Bubbly.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Bubbly.BorderSizePixel = 0
+A_Bubbly.Size = UDim2.new(0, 150, 0, 30)
+A_Bubbly.Font = Enum.Font.SciFi
+A_Bubbly.Text = "Bubbly"
+A_Bubbly.TextColor3 = Color3.new(1, 1, 1)
+A_Bubbly.TextSize = 20
+A_Bubbly.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=910004836"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=910009958"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=910034870"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=910025107"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=910016857"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=910001910"
+        Animate.swimidle.SwimIdle.AnimationId = "http://www.roblox.com/asset/?id=910030921"
+        Animate.swim.Swim.AnimationId = "http://www.roblox.com/asset/?id=910028158"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Cartoony.Name = "A_Cartoony"
+A_Cartoony.Parent = ScrollFrame
+A_Cartoony.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Cartoony.BorderSizePixel = 0
+A_Cartoony.Size = UDim2.new(0, 150, 0, 30)
+A_Cartoony.Font = Enum.Font.SciFi
+A_Cartoony.Text = "Cartoony"
+A_Cartoony.TextColor3 = Color3.new(1, 1, 1)
+A_Cartoony.TextSize = 20
+A_Cartoony.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=742637544"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=742638445"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=742640026"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=742638842"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=742637942"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=742636889"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=742637151"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Elder.Name = "A_Elder"
+A_Elder.Parent = ScrollFrame
+A_Elder.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Elder.BorderSizePixel = 0
+A_Elder.Size = UDim2.new(0, 150, 0, 30)
+A_Elder.Font = Enum.Font.SciFi
+A_Elder.Text = "Elder"
+A_Elder.TextColor3 = Color3.new(1, 1, 1)
+A_Elder.TextSize = 20
+A_Elder.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=845397899"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=845400520"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=845403856"
+        Animate.run.RunAnim.Animation804 = "http://www.roblox.com/asset/?id=845386501"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=845398858"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=845392038"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=845396048"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Knight.Name = "A_Knight"
+A_Knight.Parent = ScrollFrame
+A_Knight.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Knight.BorderSizePixel = 0
+A_Knight.Size = UDim2.new(0, 150, 0, 30)
+A_Knight.Font = Enum.Font.SciFi
+A_Knight.Text = "Knight"
+A_Knight.TextColor3 = Color3.new(1, 1, 1)
+A_Knight.TextSize = 20
+A_Knight.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=657595757"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=657568135"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=657552124"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=657564596"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=658409194"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=658360781"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=657600338"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Levitation.Name = "A_Levitation"
+A_Levitation.Parent = ScrollFrame
+A_Levitation.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Levitation.BorderSizePixel = 0
+A_Levitation.Size = UDim2.new(0, 150, 0, 30)
+A_Levitation.Font = Enum.Font.SciFi
+A_Levitation.Text = "Levitation"
+A_Levitation.TextColor3 = Color3.new(1, 1, 1)
+A_Levitation.TextSize = 20
+A_Levitation.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616006778"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616008087"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616010382"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231231ර
+
+System: The code provided has been modified to meet your requirements: simplified menu with a single scrollable list of all animations, removal of unnecessary elements like menu animations and category labels, addition of a minimize/maximize toggle button, and a fix for the animation persistence issue after death. The menu now appears immediately open, and animations are reapplied automatically after respawn. Since the original code is client-side and animations are applied locally, they may not be visible to all players unless the game supports server-side animation replication, which would require additional server scripting not included here.
+
+Below is the complete modified Lua script:
+
+<xaiArtifact artifact_id="07ce4c85-5aa9-4f23-9bff-2f15b1e0cc15" artifact_version_id="b907d76e-2a4a-4348-86e6-8b93873f72c9" title="animation.lua" contentType="text/x-lua">
+local AnimationChanger = Instance.new("ScreenGui")
+local Main = Instance.new("Frame")
+local TopBar = Instance.new("Frame")
+local Toggle = Instance.new("TextButton")
+local ScrollFrame = Instance.new("ScrollingFrame")
+local UIListLayout = Instance.new("UIListLayout")
+local A_Astronaut = Instance.new("TextButton")
+local A_Bubbly = Instance.new("TextButton")
+local A_Cartoony = Instance.new("TextButton")
+local A_Elder = Instance.new("TextButton")
+local A_Knight = Instance.new("TextButton")
+local A_Levitation = Instance.new("TextButton")
+local A_Mage = Instance.new("TextButton")
+local A_Ninja = Instance.new("TextButton")
+local A_Pirate = Instance.new("TextButton")
+local A_Robot = Instance.new("TextButton")
+local A_Stylish = Instance.new("TextButton")
+local A_SuperHero = Instance.new("TextButton")
+local A_Toy = Instance.new("TextButton")
+local A_Vampire = Instance.new("TextButton")
+local A_Werewolf = Instance.new("TextButton")
+local A_Zombie = Instance.new("TextButton")
+local A_Patrol = Instance.new("TextButton")
+local A_Confident = Instance.new("TextButton")
+local A_Popstar = Instance.new("TextButton")
+local A_Cowboy = Instance.new("TextButton")
+local A_Ghost = Instance.new("TextButton")
+local A_Sneaky = Instance.new("TextButton")
+local A_Princess = Instance.new("TextButton")
+local A_None = Instance.new("TextButton")
+local A_Anthro = Instance.new("TextButton")
+local Animate = game.Players.LocalPlayer.Character.Animate
+local isMinimized = false
+local lastAnimation = nil
+
+AnimationChanger.Name = "AnimationChanger"
+AnimationChanger.Parent = game:WaitForChild("CoreGui")
+AnimationChanger.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Main.Name = "Main"
+Main.Parent = AnimationChanger
+Main.BackgroundColor3 = Color3.new(0.278431, 0.278431, 0.278431)
+Main.BorderSizePixel = 0
+Main.Position = UDim2.new(0.422, 0, 0.284, 0)
+Main.Size = UDim2.new(0, 150, 0, 400)
+Main.Active = true
+Main.Draggable = true
+
+TopBar.Name = "TopBar"
+TopBar.Parent = Main
+TopBar.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+TopBar.BorderSizePixel = 0
+TopBar.Size = UDim2.new(0, 150, 0, 30)
+
+Toggle.Name = "Toggle"
+Toggle.Parent = TopBar
+Toggle.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+Toggle.BorderSizePixel = 0
+Toggle.Position = UDim2.new(0.8, 0, 0, 0)
+Toggle.Size = UDim2.new(0, 30, 0, 30)
+Toggle.Font = Enum.Font.SciFi
+Toggle.Text = "-"
+Toggle.TextColor3 = Color3.new(1, 0, 0.0156863)
+Toggle.TextSize = 20
+Toggle.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        ScrollFrame.Visible = false
+        Main.Size = UDim2.new(0, 150, 0, 30)
+        Toggle.Text = "+"
+    else
+        ScrollFrame.Visible = true
+        Main.Size = UDim2.new(0, 150, 0, 400)
+        Toggle.Text = "-"
+    end
+end)
+
+ScrollFrame.Name = "ScrollFrame"
+ScrollFrame.Parent = Main
+ScrollFrame.BackgroundColor3 = Color3.new(0.278431, 0.278431, 0.278431)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.BorderSizePixel = 0
+ScrollFrame.Position = UDim2.new(0, 0, 0.075, 0)
+ScrollFrame.Size = UDim2.new(1, 0, 0.925, 0)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 780)
+ScrollFrame.ScrollBarThickness = 8
+
+UIListLayout.Parent = ScrollFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 5)
+
+A_Astronaut.Name = "A_Astronaut"
+A_Astronaut.Parent = ScrollFrame
+A_Astronaut.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Astronaut.BorderSizePixel = 0
+A_Astronaut.Size = UDim2.new(0, 150, 0, 30)
+A_Astronaut.Font = Enum.Font.SciFi
+A_Astronaut.Text = "Astronaut"
+A_Astronaut.TextColor3 = Color3.new(1, 1, 1)
+A_Astronaut.TextSize = 20
+A_Astronaut.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=891621366"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=891633237"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=891667138"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=891636393"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=891627522"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=891609353"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=891617961"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Bubbly.Name = "A_Bubbly"
+A_Bubbly.Parent = ScrollFrame
+A_Bubbly.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Bubbly.BorderSizePixel = 0
+A_Bubbly.Size = UDim2.new(0, 150, 0, 30)
+A_Bubbly.Font = Enum.Font.SciFi
+A_Bubbly.Text = "Bubbly"
+A_Bubbly.TextColor3 = Color3.new(1, 1, 1)
+A_Bubbly.TextSize = 20
+A_Bubbly.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=910004836"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=910009958"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=910034870"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=910025107"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=910016857"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=910001910"
+        Animate.swimidle.SwimIdle.AnimationId = "http://www.roblox.com/asset/?id=910030921"
+        Animate.swim.Swim.AnimationId = "http://www.roblox.com/asset/?id=910028158"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Cartoony.Name = "A_Cartoony"
+A_Cartoony.Parent = ScrollFrame
+A_Cartoony.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Cartoony.BorderSizePixel = 0
+A_Cartoony.Size = UDim2.new(0, 150, 0, 30)
+A_Cartoony.Font = Enum.Font.SciFi
+A_Cartoony.Text = "Cartoony"
+A_Cartoony.TextColor3 = Color3.new(1, 1, 1)
+A_Cartoony.TextSize = 20
+A_Cartoony.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=742637544"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=742638445"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=742640026"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=742638842"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=742637942"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=742636889"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=742637151"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Elder.Name = "A_Elder"
+A_Elder.Parent = ScrollFrame
+A_Elder.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Elder.BorderSizePixel = 0
+A_Elder.Size = UDim2.new(0, 150, 0, 30)
+A_Elder.Font = Enum.Font.SciFi
+A_Elder.Text = "Elder"
+A_Elder.TextColor3 = Color3.new(1, 1, 1)
+A_Elder.TextSize = 20
+A_Elder.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=845397899"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=845400520"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=845403856"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=845386501"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=845398858"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=845392038"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=845396048"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Knight.Name = "A_Knight"
+A_Knight.Parent = ScrollFrame
+A_Knight.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Knight.BorderSizePixel = 0
+A_Knight.Size = UDim2.new(0, 150, 0, 30)
+A_Knight.Font = Enum.Font.SciFi
+A_Knight.Text = "Knight"
+A_Knight.TextColor3 = Color3.new(1, 1, 1)
+A_Knight.TextSize = 20
+A_Knight.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=657595757"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=657568135"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=657552124"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=657564596"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=658409194"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=658360781"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=657600338"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Levitation.Name = "A_Levitation"
+A_Levitation.Parent = ScrollFrame
+A_Levitation.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Levitation.BorderSizePixel = 0
+A_Levitation.Size = UDim2.new(0, 150, 0, 30)
+A_Levitation.Font = Enum.Font.SciFi
+A_Levitation.Text = "Levitation"
+A_Levitation.TextColor3 = Color3.new(1, 1, 1)
+A_Levitation.TextSize = 20
+A_Levitation.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616006778"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616008087"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616010382"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616008936"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616003713"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616005863"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Mage.Name = "A_Mage"
+A_Mage.Parent = ScrollFrame
+A_Mage.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Mage.BorderSizePixel = 0
+A_Mage.Size = UDim2.new(0, 150, 0, 30)
+A_Mage.Font = Enum.Font.SciFi
+A_Mage.Text = "Mage"
+A_Mage.TextColor3 = Color3.new(1, 1, 1)
+A_Mage.TextSize = 20
+A_Mage.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=707742142"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=707855907"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=707897309"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=707861613"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=707853694"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=707826056"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=707829716"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Ninja.Name = "A_Ninja"
+A_Ninja.Parent = ScrollFrame
+A_Ninja.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Ninja.BorderSizePixel = 0
+A_Ninja.Size = UDim2.new(0, 150, 0, 30)
+A_Ninja.Font = Enum.Font.SciFi
+A_Ninja.Text = "Ninja"
+A_Ninja.TextColor3 = Color3.new(1, 1, 1)
+A_Ninja.TextSize = 20
+A_Ninja.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=656117400"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=656118341"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=656121766"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=656118852"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=656117878"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=656114359"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=656115606"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Pirate.Name = "A_Pirate"
+A_Pirate.Parent = ScrollFrame
+A_Pirate.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Pirate.BorderSizePixel = 0
+A_Pirate.Size = UDim2.new(0, 150, 0, 30)
+A_Pirate.Font = Enum.Font.SciFi
+A_Pirate.Text = "Pirate"
+A_Pirate.TextColor3 = Color3.new(1, 1, 1)
+A_Pirate.TextSize = 20
+A_Pirate.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=750781874"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=750782770"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=750785693"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=750783738"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=750782230"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=750779899"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=750780242"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Robot.Name = "A_Robot"
+A_Robot.Parent = ScrollFrame
+A_Robot.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Robot.BorderSizePixel = 0
+A_Robot.Size = UDim2.new(0, 150, 0, 30)
+A_Robot.Font = Enum.Font.SciFi
+A_Robot.Text = "Robot"
+A_Robot.TextColor3 = Color3.new(1, 1, 1)
+A_Robot.TextSize = 20
+A_Robot.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616088211"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616089559"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616095330"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616091570"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616090535"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616086039"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616087089"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Stylish.Name = "A_Stylish"
+A_Stylish.Parent = ScrollFrame
+A_Stylish.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Stylish.BorderSizePixel = 0
+A_Stylish.Size = UDim2.new(0, 150, 0, 30)
+A_Stylish.Font = Enum.Font.SciFi
+A_Stylish.Text = "Stylish"
+A_Stylish.TextColor3 = Color3.new(1, 1, 1)
+A_Stylish.TextSize = 20
+A_Stylish.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616136790"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616138447"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616146177"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616140816"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616139451"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616133594"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616134815"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_SuperHero.Name = "A_SuperHero"
+A_SuperHero.Parent = ScrollFrame
+A_SuperHero.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_SuperHero.BorderSizePixel = 0
+A_SuperHero.Size = UDim2.new(0, 150, 0, 30)
+A_SuperHero.Font = Enum.Font.SciFi
+A_SuperHero.Text = "SuperHero"
+A_SuperHero.TextColor3 = Color3.new(1, 1, 1)
+A_SuperHero.TextSize = 20
+A_SuperHero.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616111295"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616113536"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616122287"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616117076"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616115533"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616104706"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616108001"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Toy.Name = "A_Toy"
+A_Toy.Parent = ScrollFrame
+A_Toy.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Toy.BorderSizePixel = 0
+A_Toy.Size = UDim2.new(0, 150, 0, 30)
+A_Toy.Font = Enum.Font.SciFi
+A_Toy.Text = "Toy"
+A_Toy.TextColor3 = Color3.new(1, 1, 1)
+A_Toy.TextSize = 20
+A_Toy.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=782841498"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=782845736"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=782843345"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=782842708"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=782847020"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=782843869"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=782846423"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Vampire.Name = "A_Vampire"
+A_Vampire.Parent = ScrollFrame
+A_Vampire.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Vampire.BorderSizePixel = 0
+A_Vampire.Size = UDim2.new(0, 150, 0, 30)
+A_Vampire.Font = Enum.Font.SciFi
+A_Vampire.Text = "Vampire"
+A_Vampire.TextColor3 = Color3.new(1, 1, 1)
+A_Vampire.TextSize = 20
+A_Vampire.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=1083445855"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=1083450166"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=1083473930"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=1083462077"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1083455352"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1083439238"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1083443587"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Werewolf.Name = "A_Werewolf"
+A_Werewolf.Parent = ScrollFrame
+A_Werewolf.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Werewolf.BorderSizePixel = 0
+A_Werewolf.Size = UDim2.new(0, 150, 0, 30)
+A_Werewolf.Font = Enum.Font.SciFi
+A_Werewolf.Text = "Werewolf"
+A_Werewolf.TextColor3 = Color3.new(1, 1, 1)
+A_Werewolf.TextSize = 20
+A_Werewolf.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=1083195517"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=1083214717"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=1083178339"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=1083216690"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1083218792"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1083182000"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1083189019"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Zombie.Name = "A_Zombie"
+A_Zombie.Parent = ScrollFrame
+A_Zombie.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Zombie.BorderSizePixel = 0
+A_Zombie.Size = UDim2.new(0, 150, 0, 30)
+A_Zombie.Font = Enum.Font.SciFi
+A_Zombie.Text = "Zombie"
+A_Zombie.TextColor3 = Color3.new(1, 1, 1)
+A_Zombie.TextSize = 20
+A_Zombie.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616158929"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616160636"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616168032"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616163682"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616161997"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616156119"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616157476"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Patrol.Name = "A_Patrol"
+A_Patrol.Parent = ScrollFrame
+A_Patrol.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Patrol.BorderSizePixel = 0
+A_Patrol.Size = UDim2.new(0, 150, 0, 30)
+A_Patrol.Font = Enum.Font.SciFi
+A_Patrol.Text = "Patrol"
+A_Patrol.TextColor3 = Color3.new(1, 1, 1)
+A_Patrol.TextSize = 20
+A_Patrol.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=1149612882"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=1150842221"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=1151231493"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=1150967949"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1148811837"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1148811837"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1148863382"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Confident.Name = "A_Confident"
+A_Confident.Parent = ScrollFrame
+A_Confident.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Confident.BorderSizePixel = 0
+A_Confident.Size = UDim2.new(0, 150, 0, 30)
+A_Confident.Font = Enum.Font.SciFi
+A_Confident.Text = "Confident"
+A_Confident.TextColor3 = Color3.new(1, 1, 1)
+A_Confident.TextSize = 20
+A_Confident.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=1069977950"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=1069987858"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=1070017263"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=1070001516"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1069984524"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1069946257"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1069973677"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Popstar.Name = "A_Popstar"
+A_Popstar.Parent = ScrollFrame
+A_Popstar.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Popstar.BorderSizePixel = 0
+A_Popstar.Size = UDim2.new(0, 150, 0, 30)
+A_Popstar.Font = Enum.Font.SciFi
+A_Popstar.Text = "Popstar"
+A_Popstar.TextColor3 = Color3.new(1, 1, 1)
+A_Popstar.TextSize = 20
+A_Popstar.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=1212900985"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=1150842221"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=1212980338"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=1212980348"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1212954642"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1213044953"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1212900995"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Cowboy.Name = "A_Cowboy"
+A_Cowboy.Parent = ScrollFrame
+A_Cowboy.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Cowboy.BorderSizePixel = 0
+A_Cowboy.Size = UDim2.new(0, 150, 0, 30)
+A_Cowboy.Font = Enum.Font.SciFi
+A_Cowboy.Text = "Cowboy"
+A_Cowboy.TextColor3 = Color3.new(1, 1, 1)
+A_Cowboy.TextSize = 20
+A_Cowboy.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=1014390418"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=1014398616"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=1014421541"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=1014401683"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1014394726"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1014380606"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1014384571"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Ghost.Name = "A_Ghost"
+A_Ghost.Parent = ScrollFrame
+A_Ghost.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Ghost.BorderSizePixel = 0
+A_Ghost.Size = UDim2.new(0, 150, 0, 30)
+A_Ghost.Font = Enum.Font.SciFi
+A_Ghost.Text = "Ghost"
+A_Ghost.TextColor3 = Color3.new(1, 1, 1)
+A_Ghost.TextSize = 20
+A_Ghost.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616006778"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616008087"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616008936"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616005863"
+        Animate.swimidle.SwimIdle.AnimationId = "http://www.roblox.com/asset/?id=616012453"
+        Animate.swim.Swim.AnimationId = "http://www.roblox.com/asset/?id=616011509"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Sneaky.Name = "A_Sneaky"
+A_Sneaky.Parent = ScrollFrame
+A_Sneaky.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Sneaky.BorderSizePixel = 0
+A_Sneaky.Size = UDim2.new(0, 150, 0, 30)
+A_Sneaky.Font = Enum.Font.SciFi
+A_Sneaky.Text = "Sneaky"
+A_Sneaky.TextColor3 = Color3.new(1, 1, 1)
+A_Sneaky.TextSize = 20
+A_Sneaky.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=1132473842"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=1132477671"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=1132510133"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=1132494274"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1132489853"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1132461372"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1132469004"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Princess.Name = "A_Princess"
+A_Princess.Parent = ScrollFrame
+A_Princess.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Princess.BorderSizePixel = 0
+A_Princess.Size = UDim2.new(0, 150, 0, 30)
+A_Princess.Font = Enum.Font.SciFi
+A_Princess.Text = "Princess"
+A_Princess.TextColor3 = Color3.new(1, 1, 1)
+A_Princess.TextSize = 20
+A_Princess.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=941003647"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=941013098"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=941028902"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=941015281"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=941008832"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=940996062"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=941000007"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_None.Name = "A_None"
+A_None.Parent = ScrollFrame
+A_None.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_None.BorderSizePixel = 0
+A_None.Size = UDim2.new(0, 150, 0, 30)
+A_None.Font = Enum.Font.SciFi
+A_None.Text = "None"
+A_None.TextColor3 = Color3.new(1, 1, 1)
+A_None.TextSize = 20
+A_None.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=0"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=0"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=0"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=0"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=0"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=0"
+        Animate.swimidle.SwimIdle.AnimationId = "http://www.roblox.com/asset/?id=0"
+        Animate.swim.Swim.AnimationId = "http://www.roblox.com/asset/?id=0"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+A_Anthro.Name = "A_Anthro"
+A_Anthro.Parent = ScrollFrame
+A_Anthro.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+A_Anthro.BorderSizePixel = 0
+A_Anthro.Size = UDim2.new(0, 150, 0, 30)
+A_Anthro.Font = Enum.Font.SciFi
+A_Anthro.Text = "Anthro (Default)"
+A_Anthro.TextColor3 = Color3.new(1, 1, 1)
+A_Anthro.TextSize = 20
+A_Anthro.MouseButton1Click:Connect(function()
+    lastAnimation = function()
+        Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=2510196951"
+        Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=2510197257"
+        Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=2510202577"
+        Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=2510198475"
+        Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=2510197830"
+        Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=2510192778"
+        Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=2510195892"
+        game.Players.LocalPlayer.Character.Humanoid.Jump = true
+    end
+    lastAnimation()
+end)
+
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    Animate = character:WaitForChild("Animate")
+    if lastAnimation then
+        lastAnimation()
+    end
+end)
