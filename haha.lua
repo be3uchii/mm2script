@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local viewportSize = workspace.CurrentCamera.ViewportSize
-local menuWidth, menuHeight = 400, 500
+local menuWidth, menuHeight = 300, 200
 local menuX, menuY = (viewportSize.X - menuWidth) / 2, (viewportSize.Y - menuHeight) / 2
 local isMinimized = false
 local isVisible = true
@@ -15,32 +15,35 @@ local minimizedSize = UDim2.new(0, 90, 0, 35)
 local minimizedPosition = UDim2.new(0.5, -45, 0, 10)
 local defaultPosition = UDim2.new(0, menuX, 0, menuY)
 
-local hitboxSettings = {
-    Enabled = false,
-    Size = 1,
-    Color = Color3.fromRGB(255, 0, 0),
-    Transparency = 0.5
-}
-
-local espSettings = {
-    Enabled = false,
-    Names = false,
-    Boxes = false,
-    Tracers = false,
-    Color = Color3.fromRGB(0, 255, 0),
-    TeamCheck = false
-}
-
-local miscSettings = {
-    NoClip = false,
-    Fly = false,
-    Speed = false,
-    SpeedValue = 16,
-    JumpPower = false,
-    JumpPowerValue = 50
+-- Настройки функций
+local settings = {
+    Combat = {
+        Hitbox = {
+            Enabled = false,
+            Size = 1,
+            Color = Color3.fromRGB(255, 0, 0)
+        }
+    },
+    ESP = {
+        Enabled = false,
+        Names = false,
+        Boxes = false,
+        Tracers = false,
+        Color = Color3.fromRGB(0, 255, 0)
+    },
+    Misc = {
+        NoClip = false,
+        Fly = false,
+        Speed = false,
+        SpeedValue = 16,
+        JumpPower = false,
+        JumpPowerValue = 50
+    }
 }
 
 local hitboxParts = {}
+local espFolders = {}
+local tracers = {}
 
 if PlayerGui:FindFirstChild("TestMenuGui") then
     PlayerGui.TestMenuGui:Destroy()
@@ -136,7 +139,29 @@ local tabButtons = {}
 local contentFrames = {}
 local scrollFrames = {}
 
-local function createToggle(parent, name, defaultValue, callback)
+local function createButton(parent, text, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -10, 0, 25)
+    button.Position = UDim2.new(0, 5, 0, 0)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.BackgroundTransparency = 0.3
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(160, 160, 160)
+    button.TextTransparency = 0.4
+    button.TextSize = 14
+    button.Font = Enum.Font.SourceSans
+    button.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 5)
+    corner.Parent = button
+    
+    button.MouseButton1Click:Connect(callback)
+    
+    return button
+end
+
+local function createToggle(parent, text, defaultValue, callback)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Size = UDim2.new(1, -10, 0, 25)
     toggleFrame.BackgroundTransparency = 1
@@ -145,7 +170,7 @@ local function createToggle(parent, name, defaultValue, callback)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = name
+    label.Text = text
     label.TextColor3 = Color3.fromRGB(160, 160, 160)
     label.TextTransparency = 0.4
     label.TextSize = 14
@@ -178,104 +203,90 @@ local function createToggle(parent, name, defaultValue, callback)
     return toggle
 end
 
-local function createSlider(parent, name, minValue, maxValue, defaultValue, callback)
-    local sliderFrame = Instance.new("Frame")
-    sliderFrame.Size = UDim2.new(1, -10, 0, 40)
-    sliderFrame.BackgroundTransparency = 1
-    sliderFrame.Parent = parent
+local function createValueChanger(parent, text, values, defaultValueIndex, callback)
+    local changerFrame = Instance.new("Frame")
+    changerFrame.Size = UDim2.new(1, -10, 0, 25)
+    changerFrame.BackgroundTransparency = 1
+    changerFrame.Parent = parent
     
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 15)
+    label.Size = UDim2.new(0.5, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = name .. ": " .. defaultValue
+    label.Text = text
     label.TextColor3 = Color3.fromRGB(160, 160, 160)
     label.TextTransparency = 0.4
-    label.TextSize = 12
+    label.TextSize = 14
     label.Font = Enum.Font.SourceSans
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = sliderFrame
+    label.Parent = changerFrame
     
-    local track = Instance.new("Frame")
-    track.Size = UDim2.new(1, 0, 0, 5)
-    track.Position = UDim2.new(0, 0, 0, 20)
-    track.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    track.BorderSizePixel = 0
-    track.Parent = sliderFrame
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0.2, 0, 1, 0)
+    valueLabel.Position = UDim2.new(0.5, 0, 0, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = tostring(values[defaultValueIndex])
+    valueLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
+    valueLabel.TextTransparency = 0.4
+    valueLabel.TextSize = 14
+    valueLabel.Font = Enum.Font.SourceSansBold
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Center
+    valueLabel.Parent = changerFrame
     
-    local trackCorner = Instance.new("UICorner")
-    trackCorner.CornerRadius = UDim.new(1, 0)
-    trackCorner.Parent = track
+    local prevButton = Instance.new("TextButton")
+    prevButton.Size = UDim2.new(0.1, 0, 0.8, 0)
+    prevButton.Position = UDim2.new(0.7, 0, 0.1, 0)
+    prevButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    prevButton.Text = "<"
+    prevButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    prevButton.TextSize = 12
+    prevButton.Font = Enum.Font.SourceSansBold
+    prevButton.Parent = changerFrame
     
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((defaultValue - minValue) / (maxValue - minValue), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-    fill.BorderSizePixel = 0
-    fill.Parent = track
+    local nextButton = Instance.new("TextButton")
+    nextButton.Size = UDim2.new(0.1, 0, 0.8, 0)
+    nextButton.Position = UDim2.new(0.85, 0, 0.1, 0)
+    nextButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    nextButton.Text = ">"
+    nextButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    nextButton.TextSize = 12
+    nextButton.Font = Enum.Font.SourceSansBold
+    nextButton.Parent = changerFrame
     
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(1, 0)
-    fillCorner.Parent = fill
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0.5, 0)
+    corner.Parent = prevButton
+    corner:Clone().Parent = nextButton
     
-    local thumb = Instance.new("TextButton")
-    thumb.Size = UDim2.new(0, 15, 0, 15)
-    thumb.Position = UDim2.new((defaultValue - minValue) / (maxValue - minValue), -5, 0, -5)
-    thumb.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-    thumb.Text = ""
-    thumb.Parent = sliderFrame
+    local currentIndex = defaultValueIndex
     
-    local thumbCorner = Instance.new("UICorner")
-    thumbCorner.CornerRadius = UDim.new(1, 0)
-    thumbCorner.Parent = thumb
-    
-    local dragging = false
-    
-    local function updateValue(input)
-        local posX = (input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X
-        posX = math.clamp(posX, 0, 1)
-        local value = math.floor(minValue + (maxValue - minValue) * posX)
-        fill.Size = UDim2.new(posX, 0, 1, 0)
-        thumb.Position = UDim2.new(posX, -7, 0, -5)
-        label.Text = name .. ": " .. value
-        callback(value)
+    local function updateValue()
+        valueLabel.Text = tostring(values[currentIndex])
+        callback(values[currentIndex])
     end
     
-    thumb.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-        end
+    prevButton.MouseButton1Click:Connect(function()
+        currentIndex = currentIndex > 1 and currentIndex - 1 or #values
+        updateValue()
     end)
     
-    thumb.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+    nextButton.MouseButton1Click:Connect(function()
+        currentIndex = currentIndex < #values and currentIndex + 1 or 1
+        updateValue()
     end)
     
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateValue(input)
-        end
-    end)
-    
-    track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            updateValue(input)
-        end
-    end)
-    
-    return sliderFrame
+    return changerFrame
 end
 
-local function createColorPicker(parent, name, defaultColor, callback)
+local function createColorButton(parent, text, defaultColor, callback)
     local colorFrame = Instance.new("Frame")
-    colorFrame.Size = UDim2.new(1, -10, 0, 30)
+    colorFrame.Size = UDim2.new(1, -10, 0, 25)
     colorFrame.BackgroundTransparency = 1
     colorFrame.Parent = parent
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = name
+    label.Text = text
     label.TextColor3 = Color3.fromRGB(160, 160, 160)
     label.TextTransparency = 0.4
     label.TextSize = 14
@@ -283,176 +294,42 @@ local function createColorPicker(parent, name, defaultColor, callback)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = colorFrame
     
-    local preview = Instance.new("TextButton")
-    preview.Size = UDim2.new(0.25, 0, 0.8, 0)
-    preview.Position = UDim2.new(0.75, 0, 0.1, 0)
-    preview.BackgroundColor3 = defaultColor
-    preview.Text = ""
-    preview.Parent = colorFrame
+    local colorButton = Instance.new("TextButton")
+    colorButton.Size = UDim2.new(0.25, 0, 0.8, 0)
+    colorButton.Position = UDim2.new(0.75, 0, 0.1, 0)
+    colorButton.BackgroundColor3 = defaultColor
+    colorButton.Text = ""
+    colorButton.Parent = colorFrame
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0.2, 0)
-    corner.Parent = preview
+    corner.Parent = colorButton
     
-    preview.MouseButton1Click:Connect(function()
-        local colorPicker = Instance.new("Frame")
-        colorPicker.Size = UDim2.new(0, 200, 0, 200)
-        colorPicker.Position = UDim2.new(0.5, -100, 0.5, -100)
-        colorPicker.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        colorPicker.BorderSizePixel = 0
-        colorPicker.Parent = screenGui
-        
-        local uiCorner = Instance.new("UICorner")
-        uiCorner.CornerRadius = UDim.new(0.1, 0)
-        uiCorner.Parent = colorPicker
-        
-        local uiStroke = Instance.new("UIStroke")
-        uiStroke.Color = Color3.fromRGB(100, 100, 100)
-        uiStroke.Thickness = 1
-        uiStroke.Parent = colorPicker
-        
-        local saturation = Instance.new("ImageLabel")
-        saturation.Size = UDim2.new(0, 150, 0, 150)
-        saturation.Position = UDim2.new(0, 10, 0, 10)
-        saturation.Image = "rbxassetid://4155801252"
-        saturation.BackgroundColor3 = defaultColor
-        saturation.Parent = colorPicker
-        
-        local brightness = Instance.new("Frame")
-        brightness.Size = UDim2.new(1, 0, 1, 0)
-        brightness.BackgroundColor3 = Color3.new(0, 0, 0)
-        brightness.BackgroundTransparency = 0
-        brightness.Parent = saturation
-        
-        local gradient = Instance.new("UIGradient")
-        gradient.Rotation = 90
-        gradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-        gradient.Parent = brightness
-        
-        local selector = Instance.new("Frame")
-        selector.Size = UDim2.new(0, 10, 0, 10)
-        selector.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        selector.BorderSizePixel = 2
-        selector.BorderColor3 = Color3.fromRGB(0, 0, 0)
-        selector.Parent = saturation
-        
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(1, 0)
-        corner.Parent = selector
-        
-        local hueSlider = Instance.new("Frame")
-        hueSlider.Size = UDim2.new(0, 20, 0, 150)
-        hueSlider.Position = UDim2.new(0, 170, 0, 10)
-        hueSlider.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-        hueSlider.Parent = colorPicker
-        
-        local gradient = Instance.new("UIGradient")
-        gradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 0, 255)),
-            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 0, 255)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
-            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 255, 0)),
-            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 255, 0)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-        })
-        gradient.Rotation = 90
-        gradient.Parent = hueSlider
-        
-        local hueSelector = Instance.new("Frame")
-        hueSelector.Size = UDim2.new(1, 0, 0, 5)
-        hueSelector.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        hueSelector.BorderSizePixel = 2
-        hueSelector.BorderColor3 = Color3.fromRGB(0, 0, 0)
-        hueSelector.Parent = hueSlider
-        
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 3)
-        corner.Parent = hueSelector
-        
-        local closeButton = Instance.new("TextButton")
-        closeButton.Size = UDim2.new(0, 180, 0, 25)
-        closeButton.Position = UDim2.new(0, 10, 0, 170)
-        closeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        closeButton.Text = "Apply"
-        closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        closeButton.TextSize = 14
-        closeButton.Font = Enum.Font.SourceSansBold
-        closeButton.Parent = colorPicker
-        
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0.1, 0)
-        corner.Parent = closeButton
-        
-        local function updateColor()
-            local huePos = 1 - (hueSelector.Position.Y.Scale + hueSelector.Size.Y.Scale / 2)
-            local hue = math.clamp(huePos, 0, 1)
-            
-            local satPos = selector.Position.X.Scale / saturation.AbsoluteSize.X
-            local brightPos = 1 - (selector.Position.Y.Scale / saturation.AbsoluteSize.Y)
-            
-            local saturationColor = Color3.fromHSV(hue, satPos, brightPos)
-            preview.BackgroundColor3 = saturationColor
-            saturation.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
-            callback(saturationColor)
+    local colors = {
+        Color3.fromRGB(255, 0, 0),
+        Color3.fromRGB(0, 255, 0),
+        Color3.fromRGB(0, 0, 255),
+        Color3.fromRGB(255, 255, 0),
+        Color3.fromRGB(255, 0, 255),
+        Color3.fromRGB(0, 255, 255),
+        Color3.fromRGB(255, 255, 255)
+    }
+    
+    local currentColorIndex = 1
+    for i, color in ipairs(colors) do
+        if color == defaultColor then
+            currentColorIndex = i
+            break
         end
-        
-        local function setHueSelectorPosition(y)
-            hueSelector.Position = UDim2.new(0, 0, math.clamp(y, 0, 1 - hueSelector.Size.Y.Scale), 0)
-            updateColor()
-        end
-        
-        local function setSelectorPosition(x, y)
-            selector.Position = UDim2.new(
-                math.clamp(x / saturation.AbsoluteSize.X - selector.Size.X.Scale / 2, 0, 1 - selector.Size.X.Scale),
-                -selector.Size.X.Offset / 2,
-                math.clamp(y / saturation.AbsoluteSize.Y - selector.Size.Y.Scale / 2, 0, 1 - selector.Size.Y.Scale),
-                -selector.Size.Y.Offset / 2
-            )
-            updateColor()
-        end
-        
-        hueSlider.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                local y = (input.Position.Y - hueSlider.AbsolutePosition.Y) / hueSlider.AbsoluteSize.Y
-                setHueSelectorPosition(y)
-                
-                local connection
-                connection = input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        connection:Disconnect()
-                    else
-                        local y = (input.Position.Y - hueSlider.AbsolutePosition.Y) / hueSlider.AbsoluteSize.Y
-                        setHueSelectorPosition(y)
-                    end
-                end)
-            end
-        end)
-        
-        saturation.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                setSelectorPosition(input.Position.X - saturation.AbsolutePosition.X, input.Position.Y - saturation.AbsolutePosition.Y)
-                
-                local connection
-                connection = input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        connection:Disconnect()
-                    else
-                        setSelectorPosition(input.Position.X - saturation.AbsolutePosition.X, input.Position.Y - saturation.AbsolutePosition.Y)
-                    end
-                end)
-            end
-        end)
-        
-        closeButton.MouseButton1Click:Connect(function()
-            colorPicker:Destroy()
-        end)
+    end
+    
+    colorButton.MouseButton1Click:Connect(function()
+        currentColorIndex = currentColorIndex % #colors + 1
+        colorButton.BackgroundColor3 = colors[currentColorIndex]
+        callback(colors[currentColorIndex])
     end)
     
-    return preview
+    return colorButton
 end
 
 local function updateHitboxes()
@@ -463,19 +340,19 @@ local function updateHitboxes()
     end
     hitboxParts = {}
     
-    if not hitboxSettings.Enabled then return end
+    if not settings.Combat.Hitbox.Enabled then return end
     
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
             local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
             if humanoidRootPart then
                 local hitbox = Instance.new("Part")
-                hitbox.Size = Vector3.new(hitboxSettings.Size, hitboxSettings.Size, hitboxSettings.Size)
+                hitbox.Size = Vector3.new(settings.Combat.Hitbox.Size, settings.Combat.Hitbox.Size, settings.Combat.Hitbox.Size)
                 hitbox.CFrame = humanoidRootPart.CFrame
                 hitbox.Anchored = true
                 hitbox.CanCollide = false
-                hitbox.Transparency = hitboxSettings.Transparency
-                hitbox.Color = hitboxSettings.Color
+                hitbox.Transparency = 0.5
+                hitbox.Color = settings.Combat.Hitbox.Color
                 hitbox.Material = Enum.Material.Neon
                 hitbox.Parent = workspace
                 
@@ -498,7 +375,7 @@ local function updateESP()
                 espFolder:Destroy()
             end
             
-            if not espSettings.Enabled then continue end
+            if not settings.ESP.Enabled then continue end
             
             if player.Character then
                 local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
@@ -510,7 +387,7 @@ local function updateESP()
                     newFolder.Name = "ESP_Folder"
                     newFolder.Parent = player
                     
-                    if espSettings.Names then
+                    if settings.ESP.Names then
                         local nameTag = Instance.new("BillboardGui")
                         nameTag.Name = "NameTag"
                         nameTag.Size = UDim2.new(0, 200, 0, 50)
@@ -523,51 +400,57 @@ local function updateESP()
                         nameLabel.Size = UDim2.new(1, 0, 1, 0)
                         nameLabel.BackgroundTransparency = 1
                         nameLabel.Text = player.Name
-                        nameLabel.TextColor3 = espSettings.Color
+                        nameLabel.TextColor3 = settings.ESP.Color
                         nameLabel.TextSize = 14
                         nameLabel.Font = Enum.Font.SourceSansBold
                         nameLabel.TextStrokeTransparency = 0.5
                         nameLabel.Parent = nameTag
                     end
                     
-                    if espSettings.Boxes then
+                    if settings.ESP.Boxes then
                         local box = Instance.new("BoxHandleAdornment")
                         box.Name = "Box"
                         box.Size = Vector3.new(4, 6, 2)
                         box.AlwaysOnTop = true
                         box.ZIndex = 10
                         box.Transparency = 0.5
-                        box.Color3 = espSettings.Color
+                        box.Color3 = settings.ESP.Color
                         box.Adornee = humanoidRootPart
                         box.Parent = newFolder
                     end
                     
-                    if espSettings.Tracers then
+                    if settings.ESP.Tracers then
                         local tracer = Instance.new("Frame")
-                        tracer.Name = "Tracer"
+                        tracer.Name = "Tracer_" .. player.Name
                         tracer.Size = UDim2.new(0, 1, 0, 1)
-                        tracer.BackgroundColor3 = espSettings.Color
+                        tracer.BackgroundColor3 = settings.ESP.Color
                         tracer.BorderSizePixel = 0
                         tracer.Parent = screenGui
-                        
-                        RunService.RenderStepped:Connect(function()
-                            if tracer.Parent then
-                                local vector, onScreen = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position)
-                                if onScreen then
-                                    tracer.Visible = true
-                                    tracer.Position = UDim2.new(0, vector.X, 0, vector.Y)
-                                    tracer.Rotation = math.deg(math.atan2(
-                                        (vector.Y - viewportSize.Y/2),
-                                        (vector.X - viewportSize.X/2)
-                                    )) + 90
-                                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude
-                                    tracer.Size = UDim2.new(0, 200, 0, 2 + (100 / distance))
-                                else
-                                    tracer.Visible = false
-                                end
-                            end
-                        end)
+                        tracers[player] = tracer
                     end
+                end
+            end
+        end
+    end
+end
+
+local function updateTracers()
+    for player, tracer in pairs(tracers) do
+        if player and player.Character and tracer then
+            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                local vector, onScreen = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position)
+                if onScreen then
+                    tracer.Visible = true
+                    tracer.Position = UDim2.new(0, vector.X, 0, vector.Y)
+                    tracer.Rotation = math.deg(math.atan2(
+                        (vector.Y - viewportSize.Y/2),
+                        (vector.X - viewportSize.X/2)
+                    )) + 90
+                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude
+                    tracer.Size = UDim2.new(0, 200, 0, 2 + (100 / distance))
+                else
+                    tracer.Visible = false
                 end
             end
         end
@@ -578,14 +461,14 @@ local function updateNoClip()
     if LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
-                part.CanCollide = not miscSettings.NoClip
+                part.CanCollide = not settings.Misc.NoClip
             end
         end
     end
 end
 
 local function updateFly()
-    if not miscSettings.Fly then return end
+    if not settings.Misc.Fly then return end
     
     local bodyGyro = Instance.new("BodyGyro")
     bodyGyro.P = 10000
@@ -623,7 +506,7 @@ local function updateFly()
             end)
             
             RunService.RenderStepped:Connect(function()
-                if not miscSettings.Fly then
+                if not settings.Misc.Fly then
                     bodyGyro:Destroy()
                     bodyVelocity:Destroy()
                     return
@@ -657,7 +540,7 @@ local function updateSpeed()
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
         if humanoid then
-            humanoid.WalkSpeed = miscSettings.Speed and miscSettings.SpeedValue or 16
+            humanoid.WalkSpeed = settings.Misc.Speed and settings.Misc.SpeedValue or 16
         end
     end
 end
@@ -666,7 +549,7 @@ local function updateJumpPower()
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
         if humanoid then
-            humanoid.JumpPower = miscSettings.JumpPower and miscSettings.JumpPowerValue or 50
+            humanoid.JumpPower = settings.Misc.JumpPower and settings.Misc.JumpPowerValue or 50
         end
     end
 end
@@ -735,83 +618,73 @@ for i, tabName in ipairs(tabs) do
     scrollFrames[i] = scrollFrame
 
     if tabName == "Combat" then
-        createToggle(scrollFrame, "Hitbox Enabled", hitboxSettings.Enabled, function(value)
-            hitboxSettings.Enabled = value
+        createToggle(scrollFrame, "Hitbox Enabled", settings.Combat.Hitbox.Enabled, function(value)
+            settings.Combat.Hitbox.Enabled = value
             updateHitboxes()
         end)
         
-        createSlider(scrollFrame, "Hitbox Size", 1, 8, hitboxSettings.Size, function(value)
-            hitboxSettings.Size = value
+        createValueChanger(scrollFrame, "Hitbox Size", {1, 2, 3, 4, 5, 6, 7, 8}, settings.Combat.Hitbox.Size, function(value)
+            settings.Combat.Hitbox.Size = value
             updateHitboxes()
         end)
         
-        createColorPicker(scrollFrame, "Hitbox Color", hitboxSettings.Color, function(value)
-            hitboxSettings.Color = value
-            updateHitboxes()
-        end)
-        
-        createSlider(scrollFrame, "Hitbox Transparency", 0, 1, hitboxSettings.Transparency, function(value)
-            hitboxSettings.Transparency = value
+        createColorButton(scrollFrame, "Hitbox Color", settings.Combat.Hitbox.Color, function(value)
+            settings.Combat.Hitbox.Color = value
             updateHitboxes()
         end)
     elseif tabName == "ESP" then
-        createToggle(scrollFrame, "ESP Enabled", espSettings.Enabled, function(value)
-            espSettings.Enabled = value
+        createToggle(scrollFrame, "ESP Enabled", settings.ESP.Enabled, function(value)
+            settings.ESP.Enabled = value
             updateESP()
         end)
         
-        createToggle(scrollFrame, "Name ESP", espSettings.Names, function(value)
-            espSettings.Names = value
+        createToggle(scrollFrame, "Name ESP", settings.ESP.Names, function(value)
+            settings.ESP.Names = value
             updateESP()
         end)
         
-        createToggle(scrollFrame, "Box ESP", espSettings.Boxes, function(value)
-            espSettings.Boxes = value
+        createToggle(scrollFrame, "Box ESP", settings.ESP.Boxes, function(value)
+            settings.ESP.Boxes = value
             updateESP()
         end)
         
-        createToggle(scrollFrame, "Tracer ESP", espSettings.Tracers, function(value)
-            espSettings.Tracers = value
+        createToggle(scrollFrame, "Tracer ESP", settings.ESP.Tracers, function(value)
+            settings.ESP.Tracers = value
             updateESP()
         end)
         
-        createColorPicker(scrollFrame, "ESP Color", espSettings.Color, function(value)
-            espSettings.Color = value
-            updateESP()
-        end)
-        
-        createToggle(scrollFrame, "Team Check", espSettings.TeamCheck, function(value)
-            espSettings.TeamCheck = value
+        createColorButton(scrollFrame, "ESP Color", settings.ESP.Color, function(value)
+            settings.ESP.Color = value
             updateESP()
         end)
     elseif tabName == "Misc" then
-        createToggle(scrollFrame, "NoClip", miscSettings.NoClip, function(value)
-            miscSettings.NoClip = value
+        createToggle(scrollFrame, "NoClip", settings.Misc.NoClip, function(value)
+            settings.Misc.NoClip = value
             updateNoClip()
         end)
         
-        createToggle(scrollFrame, "Fly", miscSettings.Fly, function(value)
-            miscSettings.Fly = value
+        createToggle(scrollFrame, "Fly", settings.Misc.Fly, function(value)
+            settings.Misc.Fly = value
             updateFly()
         end)
         
-        createToggle(scrollFrame, "Speed", miscSettings.Speed, function(value)
-            miscSettings.Speed = value
+        createToggle(scrollFrame, "Speed", settings.Misc.Speed, function(value)
+            settings.Misc.Speed = value
             updateSpeed()
         end)
         
-        createSlider(scrollFrame, "Speed Value", 16, 100, miscSettings.SpeedValue, function(value)
-            miscSettings.SpeedValue = value
+        createValueChanger(scrollFrame, "Speed Value", {16, 20, 25, 30, 40, 50, 75, 100}, settings.Misc.SpeedValue, function(value)
+            settings.Misc.SpeedValue = value
             updateSpeed()
         end)
         
-        createToggle(scrollFrame, "Jump Power", miscSettings.JumpPower, function(value)
-            miscSettings.JumpPower = value
+        createToggle(scrollFrame, "Jump Power", settings.Misc.JumpPower, function(value)
+            settings.Misc.JumpPower = value
             updateJumpPower()
         end)
         
-        createSlider(scrollFrame, "Jump Power Value", 50, 200, miscSettings.JumpPowerValue, function(value)
-            miscSettings.JumpPowerValue = value
+        createValueChanger(scrollFrame, "Jump Power Value", {50, 75, 100, 125, 150, 175, 200}, settings.Misc.JumpPowerValue, function(value)
+            settings.Misc.JumpPowerValue = value
             updateJumpPower()
         end)
     end
@@ -869,6 +742,7 @@ end)
 
 RunService:BindToRenderStep("MenuUpdate", Enum.RenderPriority.Input.Value + 1, function()
     updateParticles()
+    updateTracers()
     for i, btn in ipairs(tabButtons) do
         local targetColor = i == currentTab and Color3.fromRGB(85, 85, 85) or Color3.fromRGB(50, 50, 50)
         local targetTransparency = i == currentTab and 0.25 or 0.4
