@@ -1879,15 +1879,33 @@ local function createMainGUI()
         dragArea.Text = isMinimized and "" or "SILENCE"
     end)
 
-    local dragging = false
-    local dragStart, frameStart
-    local minY = 0
-    local maxY = viewportSize.Y * 0.7
+local dragging = false
+local dragStart, frameStart
+local minY = 0
+local maxY = viewportSize.Y * 0.7
 
-    dragArea.MouseButton1Down:Connect(function()
-        dragging = true
-        dragStart = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
-        frameStart = mainFrame.Position
-    end)
+dragArea.MouseButton1Down:Connect(function()
+    dragging = true
+    dragStart = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+    frameStart = mainFrame.Position
+end)
 
-    UserInputService.InputChanged:Connect(function(input
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = mousePos - dragStart
+        local newPos = UDim2.new(
+            frameStart.X.Scale,
+            frameStart.X.Offset + delta.X,
+            frameStart.Y.Scale,
+            math.clamp(frameStart.Y.Offset + delta.Y, minY, maxY)
+        )
+        mainFrame.Position = newPos
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
