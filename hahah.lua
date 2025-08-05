@@ -1879,10 +1879,10 @@ local function createMainGUI()
         dragArea.Text = isMinimized and "" or "SILENCE"
     end)
 
-local dragging = false
-local dragStart, frameStart
-local minY = 0
-local maxY = viewportSize.Y * 0.7
+      local dragging = false
+      local dragStart, frameStart
+      local minY = 0
+      local maxY = viewportSize.Y * 0.7
 
 dragArea.MouseButton1Down:Connect(function()
     dragging = true
