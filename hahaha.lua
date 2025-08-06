@@ -1728,7 +1728,186 @@ local function createMainGUI()
         uiStroke.Transparency = 0.1
         uiStroke.Parent = mainFrame
         local dragArea = Instance.new("TextButton")
-        dragArea.Size = UDim2.new(1, 0, 0, 25)
-        dragArea.BackgroundTransparency = 1
-        dragArea.Text = "SILENCE"
-        dragArea.TextColor3 = Color3.fromRGB
+dragArea.Size = UDim2.new(1, 0, 0, 25)
+dragArea.BackgroundTransparency = 1
+dragArea.Text = "SILENCE"
+dragArea.TextColor3 = Color3.fromRGB(230, 230, 230)
+dragArea.TextSize = 14
+dragArea.Font = Enum.Font.GothamBold
+dragArea.TextXAlignment = Enum.TextXAlignment.Left
+dragArea.TextYAlignment = Enum.TextYAlignment.Center
+dragArea.Parent = mainFrame
+
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 20, 0, 20)
+minimizeButton.Position = UDim2.new(1, -25, 0, 2.5)
+minimizeButton.BackgroundTransparency = 1
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(230, 230, 230)
+minimizeButton.TextSize = 16
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.Parent = mainFrame
+
+local tabFrame = Instance.new("Frame")
+tabFrame.Size = UDim2.new(1, 0, 0, 30)
+tabFrame.Position = UDim2.new(0, 0, 0, 25)
+tabFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+tabFrame.BackgroundTransparency = 0.1
+tabFrame.Parent = mainFrame
+
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabLayout.Parent = tabFrame
+
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, 0, 1, -55)
+contentFrame.Position = UDim2.new(0, 0, 0, 55)
+contentFrame.BackgroundTransparency = 1
+contentFrame.ClipsDescendants = true
+contentFrame.Parent = mainFrame
+
+local function switchTab(index)
+    currentTab = index
+    for i, button in ipairs(tabButtons) do
+        button.BackgroundColor3 = i == index and Color3.fromRGB(60, 60, 80) or Color3.fromRGB(40, 40, 50)
+        button.TextColor3 = i == index and Color3.fromRGB(230, 230, 230) or Color3.fromRGB(150, 150, 150)
+        contentFrames[i].Visible = i == index
+    end
+end
+
+for i, tabName in ipairs(tabs) do
+    local tabButton = Instance.new("TextButton")
+    tabButton.Size = UDim2.new(1/#tabs, 0, 1, 0)
+    tabButton.BackgroundColor3 = i == currentTab and Color3.fromRGB(60, 60, 80) or Color3.fromRGB(40, 40, 50)
+    tabButton.Text = tabName
+    tabButton.TextColor3 = i == currentTab and Color3.fromRGB(230, 230, 230) or Color3.fromRGB(150, 150, 150)
+    tabButton.TextSize = 12
+    tabButton.Font = Enum.Font.Gotham
+    tabButton.Parent = tabFrame
+    table.insert(tabButtons, tabButton)
+
+    local tabContent = Instance.new("Frame")
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
+    tabContent.BackgroundTransparency = 1
+    tabContent.Visible = i == currentTab
+    tabContent.Parent = contentFrame
+    contentFrames[i] = tabContent
+
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Size = UDim2.new(1, 0, 1, 0)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.ScrollBarThickness = 2
+    scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.Parent = tabContent
+    scrollFrames[i] = scrollFrame
+
+    local scrollLayout = Instance.new("UIListLayout")
+    scrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    scrollLayout.Padding = UDim.new(0, 5)
+    scrollLayout.Parent = scrollFrame
+
+    scrollFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, scrollLayout.AbsoluteContentSize.Y + 10)
+    end)
+
+    tabButton.MouseButton1Click:Connect(function()
+        playSound()
+        switchTab(i)
+    end)
+end
+
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+dragArea.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+dragArea.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+dragArea.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+minimizeButton.MouseButton1Click:Connect(function()
+    playSound()
+    isMinimized = not isMinimized
+    if isMinimized then
+        mainFrame:TweenSizeAndPosition(minimizedSize, minimizedPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        contentFrame.Visible = false
+        tabFrame.Visible = false
+        minimizeButton.Text = "+"
+    else
+        mainFrame:TweenSizeAndPosition(UDim2.new(0, menuWidth, 0, menuHeight), defaultPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        contentFrame.Visible = true
+        tabFrame.Visible = true
+        minimizeButton.Text = "-"
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.LeftAlt and not gameProcessed then
+        isVisible = not isVisible
+        screenGui.Enabled = isVisible
+        playSound()
+    end
+end)
+
+refreshCombatUI()
+refreshESPUI()
+refreshConfigUI(scrollFrames[3])
+refreshMusicUI()
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        createESP(player)
+    end
+end
+
+table.insert(connections, Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        createESP(player)
+    end
+end))
+
+table.insert(connections, Players.PlayerRemoving:Connect(function(player)
+    clearESP(player)
+end))
+
+table.insert(connections, RunService.RenderStepped:Connect(function()
+    updateAllESP()
+    updateTimer()
+end))
+
+table.insert(connections, LocalPlayer.CharacterAdded:Connect(function(character)
+    updateNoClip()
+end))
+
+if LocalPlayer.Character then
+    updateNoClip()
+end
+
+disableShadows()
+
+return screenGui
+end)
+
+if not hasValidKey() then
+    createKeyGUI()
+else
+    createMainGUI()
+    end
