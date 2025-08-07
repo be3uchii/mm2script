@@ -71,7 +71,7 @@ local defaultSettings = {
     System = {
         PerformanceMode = true,
         SafeMode = false,
-        DebugMode = true
+        DebugMode = false
     }
 }
 
