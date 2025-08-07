@@ -69,9 +69,9 @@ local defaultSettings = {
         CurrentTrack = 1
     },
     System = {
-        PerformanceMode = false,
+        PerformanceMode = true,
         SafeMode = false,
-        DebugMode = false
+        DebugMode = true
     }
 }
 
