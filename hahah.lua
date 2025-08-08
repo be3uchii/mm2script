@@ -26,7 +26,7 @@ local configFile = "settings.cfg"
 local backupFolder = "SilenceBackups"
 local cacheFolder = "SilenceCache"
 
-setfpscap(60)
+setfpscap(140)
 
 local colors = {
     Color3.fromRGB(255, 255, 255),
