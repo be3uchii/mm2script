@@ -73,8 +73,8 @@ local defaultSettings = {
     Skeleton = {
         Enabled = false,
         Color = colors[1],
-        Thickness = 7,
-        Transparency = 0.7
+        Thickness = 9,
+        Transparency = 0.9
     },
     Tracers = {
         Enabled = false,
