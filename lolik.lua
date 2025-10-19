@@ -1,3 +1,25 @@
+local gameIdCheck = 93978595733734
+if game.PlaceId ~= gameIdCheck then
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ErrorGui"
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(0, 300, 0, 100)
+    textLabel.Position = UDim2.new(0.5, -150, 0.5, -50)
+    textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+    textLabel.BackgroundTransparency = 0.3
+    textLabel.Text = "скрипт тут не поддерживается"
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.TextSize = 20
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.Parent = screenGui
+    
+    task.wait(3)
+    screenGui:Destroy()
+    return
+end
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
@@ -17,7 +39,8 @@ screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 local button = Instance.new("TextButton")
 button.Size = UDim2.new(0, 60, 0, 25)
 button.Position = UDim2.new(0, 10, 0, 10)
-button.BackgroundColor3 = Color3.new(1, 0, 0)
+button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+button.BackgroundTransparency = 0.3
 button.Text = "OFF"
 button.TextColor3 = Color3.new(1, 1, 1)
 button.TextSize = 11
@@ -27,6 +50,8 @@ local highlights = {}
 local espConnections = {}
 local lastUpdate = 0
 local updateInterval = 0.5
+local isUpdating = false
+local buttonCooldown = false
 
 local function safeCheck(callback)
     local success, result = pcall(callback)
@@ -99,8 +124,14 @@ local function createHighlight(obj, color)
 end
 
 local function updatePlayerESP()
+    if isUpdating then return end
+    isUpdating = true
+    
     local currentTime = tick()
-    if currentTime - lastUpdate < updateInterval then return end
+    if currentTime - lastUpdate < updateInterval then 
+        isUpdating = false
+        return 
+    end
     lastUpdate = currentTime
     
     local currentHighlights = {}
@@ -124,6 +155,8 @@ local function updatePlayerESP()
             end)
         end
     end
+    
+    isUpdating = false
 end
 
 local function updateGeneratorESP()
@@ -168,16 +201,22 @@ local function clearESP()
 end
 
 local function toggleESP()
+    if buttonCooldown then return end
+    buttonCooldown = true
+    
     enabled = not enabled
     if enabled then
-        button.BackgroundColor3 = Color3.new(0, 1, 0)
+        button.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
         button.Text = "ON"
         task.spawn(updateESP)
     else
-        button.BackgroundColor3 = Color3.new(1, 0, 0)
+        button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
         button.Text = "OFF"
         clearESP()
     end
+    
+    task.wait(0.3)
+    buttonCooldown = false
 end
 
 local function setupPlayerConnections(player)
@@ -305,7 +344,8 @@ localPlayer.CharacterAdded:Connect(function()
     button = Instance.new("TextButton")
     button.Size = UDim2.new(0, 60, 0, 25)
     button.Position = UDim2.new(0, 10, 0, 10)
-    button.BackgroundColor3 = Color3.new(1, 0, 0)
+    button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    button.BackgroundTransparency = 0.3
     button.Text = "OFF"
     button.TextColor3 = Color3.new(1, 1, 1)
     button.TextSize = 11
