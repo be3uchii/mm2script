@@ -1,10 +1,17 @@
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 local enabled = false
+
+local cachedKillers = {}
+local killerWords = {"killer", "hunter", "murder", "assassin", "jason", "maniac", "ghost", "slasher", "stalker", "abysswalker", "masked", "hidden"}
+local weaponWords = {"knife", "sword", "gun", "axe", "machete", "katana", "blade", "weapon"}
+local generatorWords = {"generator", "generation"}
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ESPGui"
 screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
 local button = Instance.new("TextButton")
@@ -17,39 +24,67 @@ button.TextSize = 11
 button.Parent = screenGui
 
 local highlights = {}
+local espConnections = {}
+local lastUpdate = 0
+local updateInterval = 0.5
 
-local function isKiller(player)
-    if player == localPlayer then return false end
-    local name = string.lower(player.Name)
-    local displayName = string.lower(player.DisplayName)
-    local killerWords = {"killer", "hunter", "murder", "assassin", "jason", "maniac", "ghost", "slasher", "stalker", "abysswalker", "masked", "hidden"}
-    for _, word in ipairs(killerWords) do
-        if string.find(name, word) or string.find(displayName, word) then return true end
-    end
-    if player.Character then
-        for _, tool in ipairs(player.Character:GetChildren()) do
-            if tool:IsA("Tool") then
-                local toolName = string.lower(tool.Name)
-                local weaponWords = {"knife", "sword", "gun", "axe", "machete", "katana", "blade", "weapon"}
-                for _, weapon in ipairs(weaponWords) do
-                    if string.find(toolName, weapon) then return true end
-                end
-            end
-        end
-        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid.WalkSpeed > 20 then return true end
-    end
-    if player.Team then
-        local teamName = string.lower(player.Team.Name)
-        for _, word in ipairs(killerWords) do
-            if string.find(teamName, word) then return true end
+local function safeCheck(callback)
+    local success, result = pcall(callback)
+    return success and result
+end
+
+local function stringContains(str, words)
+    local lowerStr = string.lower(str or "")
+    for _, word in ipairs(words) do
+        if string.find(lowerStr, word) then
+            return true
         end
     end
     return false
 end
 
+local function isKiller(player)
+    if cachedKillers[player] ~= nil then
+        return cachedKillers[player]
+    end
+    
+    if player == localPlayer then
+        cachedKillers[player] = false
+        return false
+    end
+    
+    local result = safeCheck(function()
+        if stringContains(player.Name, killerWords) or stringContains(player.DisplayName, killerWords) then
+            return true
+        end
+        
+        local character = player.Character
+        if character then
+            for _, tool in ipairs(character:GetChildren()) do
+                if tool:IsA("Tool") and stringContains(tool.Name, weaponWords) then
+                    return true
+                end
+            end
+            
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.WalkSpeed > 20 then
+                return true
+            end
+        end
+        
+        if player.Team and stringContains(player.Team.Name, killerWords) then
+            return true
+        end
+        
+        return false
+    end)
+    
+    cachedKillers[player] = result or false
+    return cachedKillers[player]
+end
+
 local function createHighlight(obj, color)
-    if highlights[obj] then return end
+    if highlights[obj] or not obj then return end
     
     local highlight = Instance.new("Highlight")
     highlight.FillColor = color
@@ -63,44 +98,73 @@ local function createHighlight(obj, color)
     highlights[obj] = highlight
 end
 
-local function updateESP()
-    if not enabled then return end
+local function updatePlayerESP()
+    local currentTime = tick()
+    if currentTime - lastUpdate < updateInterval then return end
+    lastUpdate = currentTime
     
     local currentHighlights = {}
     
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character then
-            local color = isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
-            createHighlight(player.Character, color)
-            currentHighlights[player.Character] = true
-        end
-    end
-    
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        local name = string.lower(obj.Name)
-        if string.find(name, "generator") or string.find(name, "generation") then
-            if obj:IsA("Model") or obj:IsA("Part") then
-                createHighlight(obj, Color3.new(1, 0.5, 0))
-                currentHighlights[obj] = true
+        if player ~= localPlayer then
+            local character = safeCheck(function() return player.Character end)
+            if character and character:IsDescendantOf(workspace) then
+                local color = isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
+                createHighlight(character, color)
+                currentHighlights[character] = true
             end
         end
     end
     
     for obj, highlight in pairs(highlights) do
-        if not currentHighlights[obj] then
-            highlight:Destroy()
-            highlights[obj] = nil
+        if not currentHighlights[obj] and obj and obj:IsA("Model") then
+            safeCheck(function()
+                highlight:Destroy()
+                highlights[obj] = nil
+            end)
         end
     end
 end
 
-local function clearESP()
+local function updateGeneratorESP()
+    local currentGeneratorHighlights = {}
+    
+    safeCheck(function()
+        for _, descendant in ipairs(workspace:GetDescendants()) do
+            if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorWords) then
+                createHighlight(descendant, Color3.new(1, 0.5, 0))
+                currentGeneratorHighlights[descendant] = true
+            end
+        end
+    end)
+    
     for obj, highlight in pairs(highlights) do
-        if highlight then
-            highlight:Destroy()
+        if not currentGeneratorHighlights[obj] and obj and (obj:IsA("Part") or obj:IsA("Model")) then
+            if stringContains(obj.Name, generatorWords) then
+                safeCheck(function()
+                    highlight:Destroy()
+                    highlights[obj] = nil
+                end)
+            end
         end
     end
+end
+
+local function updateESP()
+    if not enabled then return end
+    
+    updatePlayerESP()
+    updateGeneratorESP()
+end
+
+local function clearESP()
+    for obj, highlight in pairs(highlights) do
+        safeCheck(function()
+            highlight:Destroy()
+        end)
+    end
     highlights = {}
+    cachedKillers = {}
 end
 
 local function toggleESP()
@@ -108,7 +172,7 @@ local function toggleESP()
     if enabled then
         button.BackgroundColor3 = Color3.new(0, 1, 0)
         button.Text = "ON"
-        updateESP()
+        task.spawn(updateESP)
     else
         button.BackgroundColor3 = Color3.new(1, 0, 0)
         button.Text = "OFF"
@@ -116,64 +180,126 @@ local function toggleESP()
     end
 end
 
+local function setupPlayerConnections(player)
+    if player == localPlayer then return end
+    
+    local connections = {}
+    
+    local function onCharacterAdded(character)
+        if not enabled then return end
+        cachedKillers[player] = nil
+        task.delay(0.5, updateESP)
+    end
+    
+    local characterAdded = player.CharacterAdded:Connect(onCharacterAdded)
+    table.insert(connections, characterAdded)
+    
+    if player.Character then
+        task.spawn(onCharacterAdded, player.Character)
+    end
+    
+    espConnections[player] = connections
+end
+
+local function cleanupPlayerConnections(player)
+    if espConnections[player] then
+        for _, connection in ipairs(espConnections[player]) do
+            connection:Disconnect()
+        end
+        espConnections[player] = nil
+    end
+end
+
 button.MouseButton1Click:Connect(toggleESP)
 
-spawn(function()
-    while true do
-        if enabled then
-            updateESP()
-        end
-        wait(1)
-    end
-end)
+local espUpdateConnection
 
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        if enabled then 
-            wait(0.5) 
-            updateESP() 
+local function startESPUpdates()
+    if espUpdateConnection then
+        espUpdateConnection:Disconnect()
+    end
+    
+    espUpdateConnection = RunService.Heartbeat:Connect(function()
+        if enabled then
+            updatePlayerESP()
         end
     end)
+end
+
+local function stopESPUpdates()
+    if espUpdateConnection then
+        espUpdateConnection:Disconnect()
+        espUpdateConnection = nil
+    end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    setupPlayerConnections(player)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    cleanupPlayerConnections(player)
+    cachedKillers[player] = nil
+    if enabled then
+        updateESP()
+    end
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= localPlayer then
-        player.CharacterAdded:Connect(function()
-            if enabled then 
-                wait(0.5) 
-                updateESP() 
-            end
-        end)
+        setupPlayerConnections(player)
     end
 end
 
-workspace.DescendantAdded:Connect(function(descendant)
-    if enabled then
-        local name = string.lower(descendant.Name)
-        if string.find(name, "generator") or string.find(name, "generation") then
-            if descendant:IsA("Model") or descendant:IsA("Part") then
-                wait(0.3)
-                updateESP()
-            end
-        end
-    end
-end)
+local descendantAddedConnection
+local descendantRemovingConnection
 
-workspace.DescendantRemoving:Connect(function(descendant)
-    if highlights[descendant] then
-        highlights[descendant]:Destroy()
-        highlights[descendant] = nil
+local function setupWorkspaceConnections()
+    if descendantAddedConnection then
+        descendantAddedConnection:Disconnect()
     end
-end)
+    if descendantRemovingConnection then
+        descendantRemovingConnection:Disconnect()
+    end
+    
+    descendantAddedConnection = workspace.DescendantAdded:Connect(function(descendant)
+        if not enabled then return end
+        
+        if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorWords) then
+            task.delay(0.3, function()
+                if enabled then
+                    updateGeneratorESP()
+                end
+            end)
+        end
+    end)
+    
+    descendantRemovingConnection = workspace.DescendantRemoving:Connect(function(descendant)
+        if highlights[descendant] then
+            safeCheck(function()
+                highlights[descendant]:Destroy()
+                highlights[descendant] = nil
+            end)
+        end
+    end)
+end
+
+setupWorkspaceConnections()
 
 localPlayer.CharacterAdded:Connect(function()
-    if screenGui then
-        screenGui:Destroy()
-    end
+    stopESPUpdates()
+    clearESP()
+    
+    safeCheck(function()
+        if screenGui then
+            screenGui:Destroy()
+        end
+    end)
     
     screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ESPGui"
     screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
     
     button = Instance.new("TextButton")
@@ -186,7 +312,15 @@ localPlayer.CharacterAdded:Connect(function()
     button.Parent = screenGui
     
     enabled = false
-    clearESP()
     
     button.MouseButton1Click:Connect(toggleESP)
+    setupWorkspaceConnections()
+    
+    if enabled then
+        startESPUpdates()
+    end
 end)
+
+if enabled then
+    startESPUpdates()
+end
