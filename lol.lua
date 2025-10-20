@@ -1,25 +1,3 @@
-local gameIdCheck = 93978595733734
-if game.PlaceId ~= gameIdCheck then
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "ErrorGui"
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 300, 0, 100)
-    textLabel.Position = UDim2.new(0.5, -150, 0.5, -50)
-    textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
-    textLabel.BackgroundTransparency = 0.3
-    textLabel.Text = "скрипт тут не поддерживается"
-    textLabel.TextColor3 = Color3.new(1, 1, 1)
-    textLabel.TextSize = 20
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = screenGui
-    
-    task.wait(3)
-    screenGui:Destroy()
-    return
-end
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
@@ -56,7 +34,8 @@ local function safeCheck(callback)
 end
 
 local function stringContains(str, words)
-    local lowerStr = string.lower(str or "")
+    if not str then return false end
+    local lowerStr = string.lower(str)
     for _, word in ipairs(words) do
         if string.find(lowerStr, word) then
             return true
@@ -142,13 +121,6 @@ local function updateGeneratorESP()
     end)
 end
 
-local function updateESP()
-    if not enabled then return end
-    
-    updatePlayerESP()
-    updateGeneratorESP()
-end
-
 local function clearESP()
     for obj, highlight in pairs(highlights) do
         safeCheck(function()
@@ -167,7 +139,8 @@ local function toggleESP()
     if enabled then
         button.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
         button.Text = "ON"
-        updateESP()
+        updatePlayerESP()
+        updateGeneratorESP()
     else
         button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
         button.Text = "OFF"
@@ -186,7 +159,11 @@ local function setupPlayerConnections(player)
     local function onCharacterAdded(character)
         if not enabled then return end
         cachedKillers[player] = nil
-        task.delay(0.5, updateESP)
+        task.delay(0.5, function()
+            if enabled then
+                updatePlayerESP()
+            end
+        end)
     end
     
     local characterAdded = player.CharacterAdded:Connect(onCharacterAdded)
@@ -313,7 +290,3 @@ localPlayer.CharacterAdded:Connect(function()
         startESPUpdates()
     end
 end)
-
-if enabled then
-    startESPUpdates()
-end
