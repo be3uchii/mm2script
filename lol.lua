@@ -27,17 +27,13 @@ button.Parent = screenGui
 local highlights = {}
 local espConnections = {}
 local buttonCooldown = false
-
-local function safeCheck(callback)
-    local success, result = pcall(callback)
-    return success and result
-end
+local espUpdateConnection
 
 local function stringContains(str, words)
     if not str then return false end
-    local lowerStr = string.lower(str)
+    local lowerStr = str:lower()
     for _, word in ipairs(words) do
-        if string.find(lowerStr, word) then
+        if lowerStr:find(word) then
             return true
         end
     end
@@ -54,34 +50,34 @@ local function isKiller(player)
         return false
     end
     
-    local result = safeCheck(function()
-        if stringContains(player.Name, killerWords) or stringContains(player.DisplayName, killerWords) then
-            return true
-        end
-        
-        local character = player.Character
-        if character then
-            for _, tool in ipairs(character:GetChildren()) do
-                if tool:IsA("Tool") and stringContains(tool.Name, weaponWords) then
-                    return true
-                end
-            end
-            
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid and humanoid.WalkSpeed > 20 then
+    if stringContains(player.Name, killerWords) or stringContains(player.DisplayName, killerWords) then
+        cachedKillers[player] = true
+        return true
+    end
+    
+    local character = player.Character
+    if character then
+        for _, tool in ipairs(character:GetChildren()) do
+            if tool:IsA("Tool") and stringContains(tool.Name, weaponWords) then
+                cachedKillers[player] = true
                 return true
             end
         end
         
-        if player.Team and stringContains(player.Team.Name, killerWords) then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.WalkSpeed > 20 then
+            cachedKillers[player] = true
             return true
         end
-        
-        return false
-    end)
+    end
     
-    cachedKillers[player] = result or false
-    return cachedKillers[player]
+    if player.Team and stringContains(player.Team.Name, killerWords) then
+        cachedKillers[player] = true
+        return true
+    end
+    
+    cachedKillers[player] = false
+    return false
 end
 
 local function createHighlight(obj, color)
@@ -102,7 +98,7 @@ end
 local function updatePlayerESP()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= localPlayer then
-            local character = safeCheck(function() return player.Character end)
+            local character = player.Character
             if character and character:IsDescendantOf(workspace) then
                 local color = isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
                 createHighlight(character, color)
@@ -112,20 +108,16 @@ local function updatePlayerESP()
 end
 
 local function updateGeneratorESP()
-    safeCheck(function()
-        for _, descendant in ipairs(workspace:GetDescendants()) do
-            if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorWords) then
-                createHighlight(descendant, Color3.new(1, 0.5, 0))
-            end
+    for _, descendant in ipairs(workspace:GetDescendants()) do
+        if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorWords) then
+            createHighlight(descendant, Color3.new(1, 0.5, 0))
         end
-    end)
+    end
 end
 
 local function clearESP()
-    for obj, highlight in pairs(highlights) do
-        safeCheck(function()
-            highlight:Destroy()
-        end)
+    for _, highlight in pairs(highlights) do
+        highlight:Destroy()
     end
     highlights = {}
     cachedKillers = {}
@@ -139,8 +131,6 @@ local function toggleESP()
     if enabled then
         button.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
         button.Text = "ON"
-        updatePlayerESP()
-        updateGeneratorESP()
     else
         button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
         button.Text = "OFF"
@@ -159,19 +149,10 @@ local function setupPlayerConnections(player)
     local function onCharacterAdded(character)
         if not enabled then return end
         cachedKillers[player] = nil
-        task.delay(0.5, function()
-            if enabled then
-                updatePlayerESP()
-            end
-        end)
     end
     
     local characterAdded = player.CharacterAdded:Connect(onCharacterAdded)
     table.insert(connections, characterAdded)
-    
-    if player.Character then
-        task.spawn(onCharacterAdded, player.Character)
-    end
     
     espConnections[player] = connections
 end
@@ -184,10 +165,6 @@ local function cleanupPlayerConnections(player)
         espConnections[player] = nil
     end
 end
-
-button.MouseButton1Click:Connect(toggleESP)
-
-local espUpdateConnection
 
 local function startESPUpdates()
     if espUpdateConnection then
@@ -209,61 +186,32 @@ local function stopESPUpdates()
     end
 end
 
-Players.PlayerAdded:Connect(function(player)
-    setupPlayerConnections(player)
-end)
+button.MouseButton1Click:Connect(toggleESP)
 
+Players.PlayerAdded:Connect(setupPlayerConnections)
 Players.PlayerRemoving:Connect(function(player)
     cleanupPlayerConnections(player)
     cachedKillers[player] = nil
 end)
 
 for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= localPlayer then
-        setupPlayerConnections(player)
-    end
+    setupPlayerConnections(player)
 end
 
-local descendantAddedConnection
-local descendantRemovingConnection
-
-local function setupWorkspaceConnections()
-    if descendantAddedConnection then
-        descendantAddedConnection:Disconnect()
+workspace.DescendantRemoving:Connect(function(descendant)
+    if highlights[descendant] then
+        highlights[descendant]:Destroy()
+        highlights[descendant] = nil
     end
-    if descendantRemovingConnection then
-        descendantRemovingConnection:Disconnect()
-    end
-    
-    descendantAddedConnection = workspace.DescendantAdded:Connect(function(descendant)
-        if not enabled then return end
-        
-        if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorWords) then
-            createHighlight(descendant, Color3.new(1, 0.5, 0))
-        end
-    end)
-    
-    descendantRemovingConnection = workspace.DescendantRemoving:Connect(function(descendant)
-        if highlights[descendant] then
-            safeCheck(function()
-                highlights[descendant]:Destroy()
-                highlights[descendant] = nil
-            end)
-        end
-    end)
-end
-
-setupWorkspaceConnections()
+end)
 
 localPlayer.CharacterAdded:Connect(function()
     stopESPUpdates()
     clearESP()
     
-    safeCheck(function()
-        if screenGui then
-            screenGui:Destroy()
-        end
-    end)
+    if screenGui then
+        screenGui:Destroy()
+    end
     
     screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ESPGui"
@@ -282,11 +230,9 @@ localPlayer.CharacterAdded:Connect(function()
     button.Parent = screenGui
     
     enabled = false
-    
     button.MouseButton1Click:Connect(toggleESP)
-    setupWorkspaceConnections()
-    
-    if enabled then
-        startESPUpdates()
-    end
 end)
+
+if enabled then
+    startESPUpdates()
+end
