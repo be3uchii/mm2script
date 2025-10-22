@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local hitboxSettings = {
-    Size = 4,
+    Size = 6,
     Color = Color3.fromRGB(0, 0, 0),
     Transparency = 0.9
 }
@@ -21,7 +21,7 @@ end
 local function updateHitbox(character)
     if not isValidCharacter(character) then
         if hitboxCache[character] then
-            hitboxCache[character]:Destroy()
+            hitboxCache[character].Adornment:Destroy()
             hitboxCache[character] = nil
         end
         return
@@ -34,19 +34,38 @@ local function updateHitbox(character)
         box.Adornee = hrp
         box.AlwaysOnTop = false
         box.ZIndex = 0
-        box.Size = Vector3.new(hitboxSettings.Size * 1.5, hitboxSettings.Size * 1.8, hitboxSettings.Size * 1.5)
+        box.Size = Vector3.new(hitboxSettings.Size, hitboxSettings.Size, hitboxSettings.Size)
+        box.Color3 = hitboxSettings.Color
+        box.Transparency = hitboxSettings.Transparency
         box.Parent = hrp
-        hitboxCache[character] = box
+        
+        hitboxCache[character] = {
+            Adornment = box,
+            OriginalSize = hrp.Size
+        }
     end
 
-    local box = hitboxCache[character]
-    box.Size = Vector3.new(hitboxSettings.Size * 1.5, hitboxSettings.Size * 1.8, hitboxSettings.Size * 1.5)
-    box.Transparency = hitboxSettings.Transparency
-    box.Color3 = hitboxSettings.Color
-
-    hrp.Size = Vector3.new(hitboxSettings.Size * 1.5, hitboxSettings.Size * 1.8, hitboxSettings.Size * 1.5)
+    local hitboxData = hitboxCache[character]
+    local box = hitboxData.Adornment
+    local size = Vector3.new(hitboxSettings.Size, hitboxSettings.Size, hitboxSettings.Size)
+    
+    box.Size = size
+    hrp.Size = size
     hrp.Transparency = 1
     hrp.CanCollide = false
+end
+
+local function cleanupCharacter(character)
+    if hitboxCache[character] then
+        local hitboxData = hitboxCache[character]
+        hitboxData.Adornment:Destroy()
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            character.HumanoidRootPart.Size = hitboxData.OriginalSize
+            character.HumanoidRootPart.Transparency = 0
+            character.HumanoidRootPart.CanCollide = true
+        end
+        hitboxCache[character] = nil
+    end
 end
 
 local function processPlayer(player)
@@ -61,10 +80,7 @@ local function processPlayer(player)
     end)
     
     player.CharacterRemoving:Connect(function(character)
-        if hitboxCache[character] then
-            hitboxCache[character]:Destroy()
-            hitboxCache[character] = nil
-        end
+        cleanupCharacter(character)
     end)
 end
 
@@ -82,15 +98,19 @@ end
 
 Players.PlayerAdded:Connect(processPlayer)
 Players.PlayerRemoving:Connect(function(player)
-    if player.Character and hitboxCache[player.Character] then
-        hitboxCache[player.Character]:Destroy()
-        hitboxCache[player.Character] = nil
+    if player.Character then
+        cleanupCharacter(player.Character)
     end
 end)
 
 LocalPlayer.CharacterAdded:Connect(function()
-    for character, box in pairs(hitboxCache) do
-        box:Destroy()
-        hitboxCache[character] = nil
+    for character in pairs(hitboxCache) do
+        cleanupCharacter(character)
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        hitboxSettings.Size = hitboxSettings.Size == 4 and 10 or 4
     end
 end)
