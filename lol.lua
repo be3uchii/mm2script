@@ -27,21 +27,46 @@ button.Parent = screenGui
 local highlights = {}
 local espConnections = {}
 local buttonCooldown = false
+local cachedGenerators = {}
+local killerPatterns = {}
+local weaponPatterns = {}
+local generatorPatterns = {}
+
+for _, word in ipairs(killerWords) do
+    killerPatterns[word] = true
+end
+for _, word in ipairs(weaponWords) do
+    weaponPatterns[word] = true
+end
+for _, word in ipairs(generatorWords) do
+    generatorPatterns[word] = true
+end
 
 local function safeCheck(callback)
     local success, result = pcall(callback)
     return success and result
 end
 
-local function stringContains(str, words)
+local function stringContains(str, patterns)
     if not str then return false end
     local lowerStr = string.lower(str)
-    for _, word in ipairs(words) do
+    for word in pairs(patterns) do
         if string.find(lowerStr, word) then
             return true
         end
     end
     return false
+end
+
+local function cacheGenerators()
+    table.clear(cachedGenerators)
+    safeCheck(function()
+        for _, descendant in ipairs(workspace:GetDescendants()) do
+            if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorPatterns) then
+                table.insert(cachedGenerators, descendant)
+            end
+        end
+    end)
 end
 
 local function isKiller(player)
@@ -55,14 +80,14 @@ local function isKiller(player)
     end
     
     local result = safeCheck(function()
-        if stringContains(player.Name, killerWords) or stringContains(player.DisplayName, killerWords) then
+        if stringContains(player.Name, killerPatterns) or stringContains(player.DisplayName, killerPatterns) then
             return true
         end
         
         local character = player.Character
         if character then
             for _, tool in ipairs(character:GetChildren()) do
-                if tool:IsA("Tool") and stringContains(tool.Name, weaponWords) then
+                if tool:IsA("Tool") and stringContains(tool.Name, weaponPatterns) then
                     return true
                 end
             end
@@ -73,7 +98,7 @@ local function isKiller(player)
             end
         end
         
-        if player.Team and stringContains(player.Team.Name, killerWords) then
+        if player.Team and stringContains(player.Team.Name, killerPatterns) then
             return true
         end
         
@@ -111,14 +136,12 @@ local function updatePlayerESP()
     end
 end
 
-local function updateGeneratorESP()
-    safeCheck(function()
-        for _, descendant in ipairs(workspace:GetDescendants()) do
-            if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorWords) then
-                createHighlight(descendant, Color3.new(1, 0.5, 0))
-            end
+local function addGeneratorESP()
+    for _, generator in ipairs(cachedGenerators) do
+        if generator and generator:IsDescendantOf(workspace) then
+            createHighlight(generator, Color3.new(1, 0.5, 0))
         end
-    end)
+    end
 end
 
 local function clearESP()
@@ -127,8 +150,8 @@ local function clearESP()
             highlight:Destroy()
         end)
     end
-    highlights = {}
-    cachedKillers = {}
+    table.clear(highlights)
+    table.clear(cachedKillers)
 end
 
 local function toggleESP()
@@ -139,8 +162,9 @@ local function toggleESP()
     if enabled then
         button.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
         button.Text = "ON"
+        cacheGenerators()
         updatePlayerESP()
-        updateGeneratorESP()
+        addGeneratorESP()
     else
         button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
         button.Text = "OFF"
@@ -188,6 +212,7 @@ end
 button.MouseButton1Click:Connect(toggleESP)
 
 local espUpdateConnection
+local frameCounter = 0
 
 local function startESPUpdates()
     if espUpdateConnection then
@@ -195,9 +220,12 @@ local function startESPUpdates()
     end
     
     espUpdateConnection = RunService.Heartbeat:Connect(function()
-        if enabled then
+        if not enabled then return end
+        
+        frameCounter = frameCounter + 1
+        if frameCounter % 3 == 0 then
             updatePlayerESP()
-            updateGeneratorESP()
+            frameCounter = 0
         end
     end)
 end
@@ -238,7 +266,8 @@ local function setupWorkspaceConnections()
     descendantAddedConnection = workspace.DescendantAdded:Connect(function(descendant)
         if not enabled then return end
         
-        if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorWords) then
+        if (descendant:IsA("Model") or descendant:IsA("Part")) and stringContains(descendant.Name, generatorPatterns) then
+            table.insert(cachedGenerators, descendant)
             createHighlight(descendant, Color3.new(1, 0.5, 0))
         end
     end)
@@ -253,6 +282,7 @@ local function setupWorkspaceConnections()
     end)
 end
 
+cacheGenerators()
 setupWorkspaceConnections()
 
 localPlayer.CharacterAdded:Connect(function()
@@ -284,6 +314,7 @@ localPlayer.CharacterAdded:Connect(function()
     enabled = false
     
     button.MouseButton1Click:Connect(toggleESP)
+    cacheGenerators()
     setupWorkspaceConnections()
     
     if enabled then
