@@ -29,30 +29,31 @@ local buttonCooldown = false
 
 local function stringContains(str, patterns)
     if not str then return false end
-    local lowerStr = string.lower(str)
+    local lowerStr = str:lower()
     for word in pairs(patterns) do
-        if string.find(lowerStr, word) then
-            return true
-        end
+        if lowerStr:find(word) then return true end
     end
     return false
 end
 
 local function cacheGenerators()
     local generators = {}
-    for _, descendant in ipairs(workspace:GetDescendants()) do
+    for _, descendant in workspace:GetDescendants() do
         if descendant:IsA("Model") and stringContains(descendant.Name, generatorPatterns) then
-            table.insert(generators, descendant)
+            generators[#generators + 1] = descendant
         end
     end
     return generators
 end
 
 local function isKiller(player)
-    if cachedKillers[player] ~= nil then return cachedKillers[player] end
-    if player == localPlayer then cachedKillers[player] = false return false end
-    
-    cachedKillers[player] = stringContains(player.Name, killerPatterns) or 
+    local cached = cachedKillers[player]
+    if cached ~= nil then return cached end
+    if player == localPlayer then
+        cachedKillers[player] = false
+        return false
+    end
+    cachedKillers[player] = stringContains(player.Name, killerPatterns) or
                            stringContains(player.DisplayName, killerPatterns) or
                            (player.Team and stringContains(player.Team.Name, killerPatterns))
     return cachedKillers[player]
@@ -60,7 +61,6 @@ end
 
 local function createHighlight(obj, color)
     if highlights[obj] or not obj then return end
-    
     local highlight = Instance.new("Highlight")
     highlight.FillColor = color
     highlight.OutlineColor = color
@@ -73,20 +73,18 @@ local function createHighlight(obj, color)
 end
 
 local function updatePlayerESP()
-    for _, player in ipairs(Players:GetPlayers()) do
+    for _, player in Players:GetPlayers() do
         if player ~= localPlayer then
             local character = player.Character
             if character and character:IsDescendantOf(workspace) then
-                local color = isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
-                createHighlight(character, color)
+                createHighlight(character, isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0))
             end
         end
     end
 end
 
 local function addGeneratorESP()
-    local generators = cacheGenerators()
-    for _, generator in ipairs(generators) do
+    for _, generator in cacheGenerators() do
         if generator and generator:IsDescendantOf(workspace) then
             createHighlight(generator, Color3.new(1, 0.5, 0))
         end
@@ -94,112 +92,77 @@ local function addGeneratorESP()
 end
 
 local function clearESP()
-    for _, highlight in pairs(highlights) do
+    for obj, highlight in pairs(highlights) do
         highlight:Destroy()
     end
-    table.clear(highlights)
-    table.clear(cachedKillers)
+    highlights = {}
+    cachedKillers = {}
 end
 
 local function toggleESP()
     if buttonCooldown then return end
     buttonCooldown = true
-    
     enabled = not enabled
+    button.BackgroundColor3 = enabled and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(150, 0, 0)
+    button.Text = enabled and "ON" or "OFF"
     if enabled then
-        button.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-        button.Text = "ON"
         updatePlayerESP()
         addGeneratorESP()
     else
-        button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-        button.Text = "OFF"
         clearESP()
     end
-    
     task.wait(0.3)
     buttonCooldown = false
 end
 
 local function setupPlayerConnections(player)
     if player == localPlayer then return end
-    
-    local function onCharacterAdded()
-        if not enabled then return end
-        cachedKillers[player] = nil
-        task.delay(0.5, updatePlayerESP)
-    end
-    
-    local characterAdded = player.CharacterAdded:Connect(onCharacterAdded)
-    espConnections[player] = {characterAdded}
-    
-    if player.Character then
-        task.spawn(onCharacterAdded)
+    espConnections[player] = player.CharacterAdded:Connect(function()
+        if enabled then
+            cachedKillers[player] = nil
+            task.defer(updatePlayerESP)
+        end
+    end)
+    if player.Character and enabled then
+        task.defer(updatePlayerESP)
     end
 end
 
 local function cleanupPlayerConnections(player)
-    if espConnections[player] then
-        for _, connection in ipairs(espConnections[player]) do
-            connection:Disconnect()
-        end
+    local connection = espConnections[player]
+    if connection then
+        connection:Disconnect()
         espConnections[player] = nil
     end
 end
 
 button.MouseButton1Click:Connect(toggleESP)
 
-local espUpdateConnection
 local frameCounter = 0
-
-local function startESPUpdates()
-    if espUpdateConnection then
-        espUpdateConnection:Disconnect()
+RunService.Heartbeat:Connect(function()
+    if not enabled then return end
+    frameCounter += 1
+    if frameCounter >= 10 then
+        updatePlayerESP()
+        frameCounter = 0
     end
-    
-    espUpdateConnection = RunService.Heartbeat:Connect(function()
-        if not enabled then return end
-        frameCounter = frameCounter + 1
-        if frameCounter >= 3 then
-            updatePlayerESP()
-            frameCounter = 0
-        end
-    end)
-end
-
-local function stopESPUpdates()
-    if espUpdateConnection then
-        espUpdateConnection:Disconnect()
-        espUpdateConnection = nil
-    end
-end
-
-Players.PlayerAdded:Connect(setupPlayerConnections)
-Players.PlayerRemoving:Connect(function(player)
-    cleanupPlayerConnections(player)
-    cachedKillers[player] = nil
 end)
 
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= localPlayer then
-        setupPlayerConnections(player)
-    end
+Players.PlayerAdded:Connect(setupPlayerConnections)
+Players.PlayerRemoving:Connect(cleanupPlayerConnections)
+
+for _, player in Players:GetPlayers() do
+    setupPlayerConnections(player)
 end
 
 localPlayer.CharacterAdded:Connect(function()
-    stopESPUpdates()
     clearESP()
-    
-    if screenGui then
-        screenGui:Destroy()
-    end
-    
+    screenGui:Destroy()
     screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ESPGui"
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
-    
     button = Instance.new("TextButton")
     button.Size = UDim2.new(0, 60, 0, 25)
     button.Position = UDim2.new(0, 10, 0, 10)
@@ -209,7 +172,6 @@ localPlayer.CharacterAdded:Connect(function()
     button.TextColor3 = Color3.new(1, 1, 1)
     button.TextSize = 11
     button.Parent = screenGui
-    
     enabled = false
     button.MouseButton1Click:Connect(toggleESP)
 end)
