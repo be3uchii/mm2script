@@ -26,6 +26,8 @@ button.Parent = screenGui
 local highlights = {}
 local espConnections = {}
 local buttonCooldown = false
+local generatorsCached = false
+local cachedGenerators = {}
 
 local function stringContains(str, patterns)
     if not str then return false end
@@ -37,13 +39,15 @@ local function stringContains(str, patterns)
 end
 
 local function cacheGenerators()
-    local generators = {}
+    if generatorsCached then return cachedGenerators end
+    cachedGenerators = {}
     for _, descendant in workspace:GetDescendants() do
         if descendant:IsA("Model") and stringContains(descendant.Name, generatorPatterns) then
-            generators[#generators + 1] = descendant
+            cachedGenerators[#cachedGenerators + 1] = descendant
         end
     end
-    return generators
+    generatorsCached = true
+    return cachedGenerators
 end
 
 local function isKiller(player)
@@ -53,10 +57,22 @@ local function isKiller(player)
         cachedKillers[player] = false
         return false
     end
-    cachedKillers[player] = stringContains(player.Name, killerPatterns) or
-                           stringContains(player.DisplayName, killerPatterns) or
-                           (player.Team and stringContains(player.Team.Name, killerPatterns))
-    return cachedKillers[player]
+    
+    local isKillerRole = stringContains(player.Name, killerPatterns) or
+                        stringContains(player.DisplayName, killerPatterns) or
+                        (player.Team and stringContains(player.Team.Name, killerPatterns))
+    
+    if isKillerRole then
+        for _, otherPlayer in Players:GetPlayers() do
+            if otherPlayer ~= player and cachedKillers[otherPlayer] then
+                cachedKillers[player] = false
+                return false
+            end
+        end
+    end
+    
+    cachedKillers[player] = isKillerRole
+    return isKillerRole
 end
 
 local function createHighlight(obj, color)
@@ -110,6 +126,8 @@ local function toggleESP()
         addGeneratorESP()
     else
         clearESP()
+        generatorsCached = false
+        cachedGenerators = {}
     end
     task.wait(0.3)
     buttonCooldown = false
@@ -173,5 +191,7 @@ localPlayer.CharacterAdded:Connect(function()
     button.TextSize = 11
     button.Parent = screenGui
     enabled = false
+    generatorsCached = false
+    cachedGenerators = {}
     button.MouseButton1Click:Connect(toggleESP)
 end)
