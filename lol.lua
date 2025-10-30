@@ -75,6 +75,24 @@ local function isKiller(player)
     return isKillerRole
 end
 
+local function getPlayerColor(player)
+    local username = player.Name
+    
+    if username == "natebyatakpoxui" or username == "natebyatakpoxuii" then
+        if isKiller(player) then
+            return Color3.new(1, 0, 0)
+        else
+            return Color3.new(1, 1, 0)
+        end
+    end
+    
+    if isKiller(player) then
+        return Color3.new(1, 0, 0)
+    else
+        return Color3.new(0, 1, 0)
+    end
+end
+
 local function createHighlight(obj, color)
     if highlights[obj] or not obj then return end
     local highlight = Instance.new("Highlight")
@@ -93,7 +111,7 @@ local function updatePlayerESP()
         if player ~= localPlayer then
             local character = player.Character
             if character and character:IsDescendantOf(workspace) then
-                createHighlight(character, isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0))
+                createHighlight(character, getPlayerColor(player))
             end
         end
     end
