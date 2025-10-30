@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
-local enabled = false
 
 local cachedKillers = {}
 local killerPatterns = {killer = true}
@@ -28,6 +27,7 @@ local espConnections = {}
 local buttonCooldown = false
 local generatorsCached = false
 local cachedGenerators = {}
+local enabled = false
 
 local function stringContains(str, patterns)
     if not str then return false end
@@ -51,8 +51,7 @@ local function cacheGenerators()
 end
 
 local function isKiller(player)
-    local cached = cachedKillers[player]
-    if cached ~= nil then return cached end
+    if cachedKillers[player] ~= nil then return cachedKillers[player] end
     if player == localPlayer then
         cachedKillers[player] = false
         return false
@@ -63,7 +62,7 @@ local function isKiller(player)
                         (player.Team and stringContains(player.Team.Name, killerPatterns))
     
     if isKillerRole then
-        for _, otherPlayer in Players:GetPlayers() do
+        for otherPlayer in pairs(cachedKillers) do
             if otherPlayer ~= player and cachedKillers[otherPlayer] then
                 cachedKillers[player] = false
                 return false
@@ -79,18 +78,10 @@ local function getPlayerColor(player)
     local username = player.Name
     
     if username == "natebyatakpoxui" or username == "natebyatakpoxuii" then
-        if isKiller(player) then
-            return Color3.new(1, 0, 0)
-        else
-            return Color3.new(1, 1, 0)
-        end
+        return isKiller(player) and Color3.new(1, 0, 0) or Color3.new(1, 1, 0)
     end
     
-    if isKiller(player) then
-        return Color3.new(1, 0, 0)
-    else
-        return Color3.new(0, 1, 0)
-    end
+    return isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
 end
 
 local function createHighlight(obj, color)
@@ -107,6 +98,8 @@ local function createHighlight(obj, color)
 end
 
 local function updatePlayerESP()
+    if not enabled then return end
+    
     for _, player in Players:GetPlayers() do
         if player ~= localPlayer then
             local character = player.Character
@@ -118,6 +111,8 @@ local function updatePlayerESP()
 end
 
 local function addGeneratorESP()
+    if not enabled then return end
+    
     for _, generator in cacheGenerators() do
         if generator and generator:IsDescendantOf(workspace) then
             createHighlight(generator, Color3.new(1, 0.5, 0))
@@ -136,32 +131,35 @@ end
 local function toggleESP()
     if buttonCooldown then return end
     buttonCooldown = true
+    
     enabled = not enabled
     button.BackgroundColor3 = enabled and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(150, 0, 0)
     button.Text = enabled and "ON" or "OFF"
+    
     if enabled then
-        task.spawn(updatePlayerESP)
-        task.spawn(addGeneratorESP)
+        updatePlayerESP()
+        addGeneratorESP()
     else
-        task.spawn(clearESP)
-        generatorsCached = false
-        cachedGenerators = {}
+        clearESP()
     end
+    
     task.wait(0.3)
     buttonCooldown = false
 end
 
 local function setupPlayerConnections(player)
     if player == localPlayer then return end
+    
     espConnections[player] = player.CharacterAdded:Connect(function()
         if enabled then
             cachedKillers[player] = nil
             task.wait(0.5)
-            task.spawn(updatePlayerESP)
+            updatePlayerESP()
         end
     end)
+    
     if player.Character and enabled then
-        task.spawn(updatePlayerESP)
+        updatePlayerESP()
     end
 end
 
@@ -173,14 +171,25 @@ local function cleanupPlayerConnections(player)
     end
 end
 
+local function cleanupAll()
+    clearESP()
+    for player in pairs(espConnections) do
+        cleanupPlayerConnections(player)
+    end
+    table.clear(espConnections)
+    generatorsCached = false
+    table.clear(cachedGenerators)
+end
+
 button.MouseButton1Click:Connect(toggleESP)
 
 local frameCounter = 0
 RunService.Heartbeat:Connect(function()
     if not enabled then return end
+    
     frameCounter = frameCounter + 1
     if frameCounter >= 30 then
-        task.spawn(updatePlayerESP)
+        updatePlayerESP()
         frameCounter = 0
     end
 end)
@@ -193,14 +202,17 @@ for _, player in Players:GetPlayers() do
 end
 
 localPlayer.CharacterAdded:Connect(function()
-    clearESP()
+    cleanupAll()
     screenGui:Destroy()
+    
     task.wait(0.1)
+    
     screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ESPGui"
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+    
     button = Instance.new("TextButton")
     button.Size = UDim2.new(0, 60, 0, 25)
     button.Position = UDim2.new(0, 10, 0, 10)
@@ -210,8 +222,9 @@ localPlayer.CharacterAdded:Connect(function()
     button.TextColor3 = Color3.new(1, 1, 1)
     button.TextSize = 11
     button.Parent = screenGui
+    
     enabled = false
-    generatorsCached = false
-    cachedGenerators = {}
+    buttonCooldown = false
+    
     button.MouseButton1Click:Connect(toggleESP)
 end)
