@@ -122,10 +122,10 @@ local function toggleESP()
     button.BackgroundColor3 = enabled and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(150, 0, 0)
     button.Text = enabled and "ON" or "OFF"
     if enabled then
-        updatePlayerESP()
-        addGeneratorESP()
+        task.spawn(updatePlayerESP)
+        task.spawn(addGeneratorESP)
     else
-        clearESP()
+        task.spawn(clearESP)
         generatorsCached = false
         cachedGenerators = {}
     end
@@ -138,11 +138,12 @@ local function setupPlayerConnections(player)
     espConnections[player] = player.CharacterAdded:Connect(function()
         if enabled then
             cachedKillers[player] = nil
-            task.defer(updatePlayerESP)
+            task.wait(0.5)
+            task.spawn(updatePlayerESP)
         end
     end)
     if player.Character and enabled then
-        task.defer(updatePlayerESP)
+        task.spawn(updatePlayerESP)
     end
 end
 
@@ -159,9 +160,9 @@ button.MouseButton1Click:Connect(toggleESP)
 local frameCounter = 0
 RunService.Heartbeat:Connect(function()
     if not enabled then return end
-    frameCounter += 1
-    if frameCounter >= 10 then
-        updatePlayerESP()
+    frameCounter = frameCounter + 1
+    if frameCounter >= 30 then
+        task.spawn(updatePlayerESP)
         frameCounter = 0
     end
 end)
@@ -176,6 +177,7 @@ end
 localPlayer.CharacterAdded:Connect(function()
     clearESP()
     screenGui:Destroy()
+    task.wait(0.1)
     screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ESPGui"
     screenGui.ResetOnSpawn = false
