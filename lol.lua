@@ -4,8 +4,7 @@ local localPlayer = Players.LocalPlayer
 
 local enabled = false
 local cachedKillers = {}
-local killerPatterns = {killer = true, murder = true}
-local generatorPatterns = {generator = true, repair = true}
+local killerPatterns = {killer = true}
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ESPGui"
@@ -31,8 +30,6 @@ local highlights = {}
 local espConnections = {}
 local playerConnections = {}
 local buttonCooldown = false
-local cachedGenerators = {}
-local generatorsCached = false
 
 local function safeDestroy(object)
     if object then
@@ -49,22 +46,6 @@ local function stringContains(str, patterns)
         end
     end
     return false
-end
-
-local function cacheGenerators()
-    if generatorsCached then return cachedGenerators end
-    cachedGenerators = {}
-    
-    local descendants = workspace:GetDescendants()
-    for i = 1, #descendants do
-        local descendant = descendants[i]
-        if descendant:IsA("Model") and stringContains(descendant.Name, generatorPatterns) then
-            table.insert(cachedGenerators, descendant)
-        end
-    end
-    
-    generatorsCached = true
-    return cachedGenerators
 end
 
 local function isKiller(player)
@@ -93,9 +74,8 @@ local function createHighlight(obj, color)
     highlight.FillColor = color
     highlight.OutlineTransparency = 1
     highlight.FillTransparency = 0.7
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = obj
-    highlight.Parent = screenGui
+    highlight.Parent = game.Lighting
     highlights[obj] = highlight
     
     local connection
@@ -138,11 +118,13 @@ local function updatePlayerESP()
 end
 
 local function addGeneratorESP()
-    local generators = cacheGenerators()
-    for i = 1, #generators do
-        local generator = generators[i]
-        if generator and generator:IsDescendantOf(workspace) then
-            createHighlight(generator, Color3.new(1, 0.5, 0))
+    local descendants = workspace:GetDescendants()
+    for i = 1, #descendants do
+        local descendant = descendants[i]
+        if descendant:IsA("Model") and stringContains(descendant.Name, {generator = true, repair = true}) then
+            if descendant:IsDescendantOf(workspace) then
+                createHighlight(descendant, Color3.new(1, 0.5, 0))
+            end
         end
     end
 end
@@ -166,8 +148,6 @@ local function clearAll()
     espConnections = {}
     
     cachedKillers = {}
-    cachedGenerators = {}
-    generatorsCached = false
     enabled = false
 end
 
