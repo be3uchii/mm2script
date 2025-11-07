@@ -32,7 +32,7 @@ local playerConnections = {}
 local buttonCooldown = false
 
 local function safeDestroy(object)
-    if object then
+    if object and object.Parent then
         object:Destroy()
     end
 end
@@ -77,17 +77,6 @@ local function createHighlight(obj, color)
     highlight.Adornee = obj
     highlight.Parent = game.Lighting
     highlights[obj] = highlight
-    
-    local connection
-    connection = obj.AncestryChanged:Connect(function(_, parent)
-        if not parent or not obj:IsDescendantOf(workspace) then
-            safeDestroy(highlights[obj])
-            highlights[obj] = nil
-            if connection then
-                connection:Disconnect()
-            end
-        end
-    end)
 end
 
 local function cleanupUnusedHighlights()
@@ -117,7 +106,11 @@ local function updatePlayerESP()
     end
 end
 
+local generatorsAdded = false
 local function addGeneratorESP()
+    if generatorsAdded then return end
+    generatorsAdded = true
+    
     local descendants = workspace:GetDescendants()
     for i = 1, #descendants do
         local descendant = descendants[i]
@@ -148,6 +141,7 @@ local function clearAll()
     espConnections = {}
     
     cachedKillers = {}
+    generatorsAdded = false
     enabled = false
 end
 
@@ -166,7 +160,7 @@ local function toggleESP()
         clearAll()
     end
     
-    task.delay(0.3, function()
+    task.delay(0.5, function()
         buttonCooldown = false
     end)
 end
@@ -201,7 +195,7 @@ local function setupPlayerConnections(player)
     espConnections[player] = player.CharacterAdded:Connect(function(character)
         if enabled then
             cachedKillers[player] = nil
-            task.delay(0.5, updatePlayerESP)
+            task.delay(1, updatePlayerESP)
         end
     end)
     
@@ -213,7 +207,7 @@ local function setupPlayerConnections(player)
     end))
     
     if player.Character and enabled then
-        updatePlayerESP()
+        task.delay(0.5, updatePlayerESP)
     end
 end
 
@@ -226,29 +220,36 @@ RunService.Heartbeat:Connect(function()
     frameCounter += 1
     cleanupCounter += 1
     
-    if frameCounter >= 120 then
+    if frameCounter >= 180 then
         updatePlayerESP()
         frameCounter = 0
     end
     
-    if cleanupCounter >= 240 then
+    if cleanupCounter >= 300 then
         cleanupUnusedHighlights()
         cleanupCounter = 0
     end
 end)
 
-Players.PlayerAdded:Connect(setupPlayerConnections)
+Players.PlayerAdded:Connect(function(player)
+    task.delay(1, function()
+        setupPlayerConnections(player)
+    end)
+end)
+
 Players.PlayerRemoving:Connect(cleanupPlayer)
 
 for _, player in ipairs(Players:GetPlayers()) do
-    setupPlayerConnections(player)
+    task.delay(0.5, function()
+        setupPlayerConnections(player)
+    end)
 end
 
 localPlayer.CharacterAdded:Connect(function()
     clearAll()
     safeDestroy(screenGui)
     
-    task.wait(0.1)
+    task.wait(1)
     
     screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ESPGui"
@@ -273,6 +274,8 @@ localPlayer.CharacterAdded:Connect(function()
     button.MouseButton1Click:Connect(toggleESP)
     
     for _, player in ipairs(Players:GetPlayers()) do
-        setupPlayerConnections(player)
+        task.delay(0.5, function()
+            setupPlayerConnections(player)
+        end)
     end
 end)
