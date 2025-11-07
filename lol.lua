@@ -73,7 +73,7 @@ local function createHighlight(obj, color)
     local highlight = Instance.new("Highlight")
     highlight.FillColor = color
     highlight.OutlineTransparency = 1
-    highlight.FillTransparency = 0.7
+    highlight.FillTransparency = 0.6
     highlight.Adornee = obj
     highlight.Parent = game.Lighting
     highlights[obj] = highlight
@@ -226,12 +226,12 @@ RunService.Heartbeat:Connect(function()
     frameCounter += 1
     cleanupCounter += 1
     
-    if frameCounter >= 60 then
+    if frameCounter >= 120 then
         updatePlayerESP()
         frameCounter = 0
     end
     
-    if cleanupCounter >= 120 then
+    if cleanupCounter >= 240 then
         cleanupUnusedHighlights()
         cleanupCounter = 0
     end
