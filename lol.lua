@@ -14,14 +14,18 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
 local button = Instance.new("TextButton")
-button.Size = UDim2.new(0, 60, 0, 25)
+button.Size = UDim2.new(0, 50, 0, 22)
 button.Position = UDim2.new(0, 10, 0, 10)
 button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
 button.BackgroundTransparency = 0.3
 button.Text = "OFF"
 button.TextColor3 = Color3.new(1, 1, 1)
-button.TextSize = 11
+button.TextSize = 10
 button.Parent = screenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 6)
+UICorner.Parent = button
 
 local highlights = {}
 local espConnections = {}
@@ -29,6 +33,8 @@ local playerConnections = {}
 local buttonCooldown = false
 local cachedGenerators = {}
 local generatorsCached = false
+local frameCounter = 0
+local cleanupCounter = 0
 
 local function stringContains(str, patterns)
     if not str then return false end
@@ -44,7 +50,9 @@ end
 local function cacheGenerators()
     if generatorsCached then return cachedGenerators end
     cachedGenerators = {}
-    for _, descendant in workspace:GetDescendants() do
+    local descendants = workspace:GetDescendants()
+    for i = 1, #descendants do
+        local descendant = descendants[i]
         if descendant:IsA("Model") and stringContains(descendant.Name, generatorPatterns) then
             table.insert(cachedGenerators, descendant)
         end
@@ -76,9 +84,8 @@ local function createHighlight(obj, color)
     
     local highlight = Instance.new("Highlight")
     highlight.FillColor = color
-    highlight.OutlineColor = color
+    highlight.OutlineTransparency = 1
     highlight.FillTransparency = 0.7
-    highlight.OutlineTransparency = 0.3
     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = obj
     highlight.Parent = screenGui
@@ -98,8 +105,19 @@ local function createHighlight(obj, color)
     end)
 end
 
+local function cleanupUnusedHighlights()
+    for obj, highlight in pairs(highlights) do
+        if not obj or not obj.Parent or not obj:IsDescendantOf(workspace) then
+            highlight:Destroy()
+            highlights[obj] = nil
+        end
+    end
+end
+
 local function updatePlayerESP()
-    for _, player in Players:GetPlayers() do
+    local players = Players:GetPlayers()
+    for i = 1, #players do
+        local player = players[i]
         if player ~= localPlayer then
             local character = player.Character
             if character and character:IsDescendantOf(workspace) then
@@ -110,7 +128,9 @@ local function updatePlayerESP()
 end
 
 local function addGeneratorESP()
-    for _, generator in cacheGenerators() do
+    local generators = cacheGenerators()
+    for i = 1, #generators do
+        local generator = generators[i]
         if generator and generator:IsDescendantOf(workspace) then
             createHighlight(generator, Color3.new(1, 0.5, 0))
         end
@@ -120,8 +140,8 @@ end
 local function clearESP()
     for obj, highlight in pairs(highlights) do
         highlight:Destroy()
-        highlights[obj] = nil
     end
+    highlights = {}
     cachedKillers = {}
 end
 
@@ -195,14 +215,20 @@ end
 
 button.MouseButton1Click:Connect(toggleESP)
 
-local frameCounter = 0
 RunService.Heartbeat:Connect(function()
     if not enabled then return end
     
     frameCounter = frameCounter + 1
+    cleanupCounter = cleanupCounter + 1
+    
     if frameCounter >= 60 then
         updatePlayerESP()
         frameCounter = 0
+    end
+    
+    if cleanupCounter >= 120 then
+        cleanupUnusedHighlights()
+        cleanupCounter = 0
     end
 end)
 
@@ -211,8 +237,9 @@ Players.PlayerRemoving:Connect(function(player)
     cleanupPlayer(player)
 end)
 
-for _, player in Players:GetPlayers() do
-    setupPlayerConnections(player)
+local currentPlayers = Players:GetPlayers()
+for i = 1, #currentPlayers do
+    setupPlayerConnections(currentPlayers[i])
 end
 
 localPlayer.CharacterAdded:Connect(function()
@@ -244,19 +271,24 @@ localPlayer.CharacterAdded:Connect(function()
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
     
     button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 60, 0, 25)
+    button.Size = UDim2.new(0, 50, 0, 22)
     button.Position = UDim2.new(0, 10, 0, 10)
     button.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
     button.BackgroundTransparency = 0.3
     button.Text = "OFF"
     button.TextColor3 = Color3.new(1, 1, 1)
-    button.TextSize = 11
+    button.TextSize = 10
     button.Parent = screenGui
+    
+    UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 6)
+    UICorner.Parent = button
     
     enabled = false
     button.MouseButton1Click:Connect(toggleESP)
     
-    for _, player in Players:GetPlayers() do
-        setupPlayerConnections(player)
+    currentPlayers = Players:GetPlayers()
+    for i = 1, #currentPlayers do
+        setupPlayerConnections(currentPlayers[i])
     end
 end)
