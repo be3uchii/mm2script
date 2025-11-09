@@ -3,7 +3,6 @@ local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 
 local enabled = false
-local cachedKillers = {}
 local killerPatterns = {killer = true}
 
 local screenGui = Instance.new("ScreenGui")
@@ -53,16 +52,7 @@ local function isKiller(player)
         return false
     end
     
-    if cachedKillers[player] ~= nil then
-        return cachedKillers[player]
-    end
-    
-    local result = stringContains(player.Name, killerPatterns) or
-                   stringContains(player.DisplayName, killerPatterns) or
-                   (player.Team and stringContains(player.Team.Name, killerPatterns))
-    
-    cachedKillers[player] = result
-    return result
+    return (player.Team and stringContains(player.Team.Name, killerPatterns))
 end
 
 local function createHighlight(obj, color)
@@ -75,25 +65,20 @@ local function createHighlight(obj, color)
     highlight.OutlineTransparency = 1
     highlight.FillTransparency = 0.6
     highlight.Adornee = obj
-    highlight.Parent = game.Lighting
+    highlight.Parent = screenGui
     highlights[obj] = highlight
 end
 
-local function cleanupUnusedHighlights()
-    local toRemove = {}
+local function cleanupAllHighlights()
     for obj, highlight in pairs(highlights) do
-        if not obj or not obj.Parent or not obj:IsDescendantOf(workspace) then
-            table.insert(toRemove, obj)
-        end
+        safeDestroy(highlight)
     end
-    
-    for i = 1, #toRemove do
-        safeDestroy(highlights[toRemove[i]])
-        highlights[toRemove[i]] = nil
-    end
+    highlights = {}
 end
 
 local function updatePlayerESP()
+    if not enabled then return end
+    
     local players = Players:GetPlayers()
     for i = 1, #players do
         local player = players[i]
@@ -108,13 +93,13 @@ end
 
 local generatorsAdded = false
 local function addGeneratorESP()
-    if generatorsAdded then return end
+    if generatorsAdded or not enabled then return end
     generatorsAdded = true
     
     local descendants = workspace:GetDescendants()
     for i = 1, #descendants do
         local descendant = descendants[i]
-        if descendant:IsA("Model") and stringContains(descendant.Name, {generator = true, repair = true}) then
+        if descendant:IsA("Model") and stringContains(descendant.Name, {generator = true}) then
             if descendant:IsDescendantOf(workspace) then
                 createHighlight(descendant, Color3.new(1, 0.5, 0))
             end
@@ -123,10 +108,7 @@ local function addGeneratorESP()
 end
 
 local function clearAll()
-    for obj, highlight in pairs(highlights) do
-        safeDestroy(highlight)
-    end
-    highlights = {}
+    cleanupAllHighlights()
     
     for player, connections in pairs(playerConnections) do
         for _, connection in pairs(connections) do
@@ -140,7 +122,6 @@ local function clearAll()
     end
     espConnections = {}
     
-    cachedKillers = {}
     generatorsAdded = false
     enabled = false
 end
@@ -183,8 +164,6 @@ local function cleanupPlayer(player)
         safeDestroy(highlights[character])
         highlights[character] = nil
     end
-    
-    cachedKillers[player] = nil
 end
 
 local function setupPlayerConnections(player)
@@ -194,7 +173,6 @@ local function setupPlayerConnections(player)
     
     espConnections[player] = player.CharacterAdded:Connect(function(character)
         if enabled then
-            cachedKillers[player] = nil
             task.delay(1, updatePlayerESP)
         end
     end)
@@ -213,21 +191,15 @@ end
 
 button.MouseButton1Click:Connect(toggleESP)
 
-local frameCounter, cleanupCounter = 0, 0
+local frameCounter = 0
 RunService.Heartbeat:Connect(function()
     if not enabled then return end
     
     frameCounter += 1
-    cleanupCounter += 1
     
     if frameCounter >= 180 then
         updatePlayerESP()
         frameCounter = 0
-    end
-    
-    if cleanupCounter >= 300 then
-        cleanupUnusedHighlights()
-        cleanupCounter = 0
     end
 end)
 
