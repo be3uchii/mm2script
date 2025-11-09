@@ -55,6 +55,22 @@ local function isKiller(player)
     return (player.Team and stringContains(player.Team.Name, killerPatterns))
 end
 
+local function amIKiller()
+    return localPlayer.Team and stringContains(localPlayer.Team.Name, killerPatterns)
+end
+
+local function hasGreenLight(generator)
+    for _, part in ipairs(generator:GetDescendants()) do
+        if part:IsA("Light") and part.Enabled then
+            local color = part.Color
+            if color.G > 0.8 and color.R < 0.5 and color.B < 0.5 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 local function createHighlight(obj, color)
     if not obj or not obj:IsDescendantOf(workspace) or highlights[obj] then 
         return 
@@ -91,17 +107,22 @@ local function updatePlayerESP()
     end
 end
 
-local generatorsAdded = false
-local function addGeneratorESP()
-    if generatorsAdded or not enabled then return end
-    generatorsAdded = true
+local function updateGeneratorESP()
+    if not enabled or amIKiller() then return end
     
-    local descendants = workspace:GetDescendants()
-    for i = 1, #descendants do
-        local descendant = descendants[i]
+    for _, descendant in ipairs(workspace:GetDescendants()) do
         if descendant:IsA("Model") and stringContains(descendant.Name, {generator = true}) then
             if descendant:IsDescendantOf(workspace) then
-                createHighlight(descendant, Color3.new(1, 0.5, 0))
+                if not hasGreenLight(descendant) then
+                    if not highlights[descendant] then
+                        createHighlight(descendant, Color3.new(1, 0.5, 0))
+                    end
+                else
+                    if highlights[descendant] then
+                        safeDestroy(highlights[descendant])
+                        highlights[descendant] = nil
+                    end
+                end
             end
         end
     end
@@ -122,7 +143,6 @@ local function clearAll()
     end
     espConnections = {}
     
-    generatorsAdded = false
     enabled = false
 end
 
@@ -136,7 +156,7 @@ local function toggleESP()
     
     if enabled then
         updatePlayerESP()
-        addGeneratorESP()
+        updateGeneratorESP()
     else
         clearAll()
     end
@@ -192,14 +212,21 @@ end
 button.MouseButton1Click:Connect(toggleESP)
 
 local frameCounter = 0
+local generatorUpdateCounter = 0
 RunService.Heartbeat:Connect(function()
     if not enabled then return end
     
     frameCounter += 1
+    generatorUpdateCounter += 1
     
     if frameCounter >= 180 then
         updatePlayerESP()
         frameCounter = 0
+    end
+    
+    if generatorUpdateCounter >= 300 then
+        updateGeneratorESP()
+        generatorUpdateCounter = 0
     end
 end)
 
