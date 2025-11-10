@@ -49,26 +49,20 @@ local function stringContains(str, patterns)
 end
 
 local function isKiller(player)
-    if not player or player == localPlayer then
-        return false
-    end
+    if not player or player == localPlayer then return false end
     
     if cachedKillers[player] ~= nil then
         return cachedKillers[player]
     end
     
-    local result = stringContains(player.Name, killerPatterns) or
-                   stringContains(player.DisplayName, killerPatterns) or
-                   (player.Team and stringContains(player.Team.Name, killerPatterns))
-    
-    cachedKillers[player] = result
-    return result
+    cachedKillers[player] = stringContains(player.Name, killerPatterns) or
+                            stringContains(player.DisplayName, killerPatterns) or
+                            (player.Team and stringContains(player.Team.Name, killerPatterns))
+    return cachedKillers[player]
 end
 
 local function createHighlight(obj, color)
-    if not obj or not obj:IsDescendantOf(workspace) or highlights[obj] then 
-        return 
-    end
+    if not obj or not obj:IsDescendantOf(workspace) or highlights[obj] then return end
     
     local highlight = Instance.new("Highlight")
     highlight.FillColor = color
@@ -80,16 +74,11 @@ local function createHighlight(obj, color)
 end
 
 local function cleanupUnusedHighlights()
-    local toRemove = {}
     for obj, highlight in pairs(highlights) do
         if not obj or not obj.Parent or not obj:IsDescendantOf(workspace) then
-            table.insert(toRemove, obj)
+            safeDestroy(highlight)
+            highlights[obj] = nil
         end
-    end
-    
-    for i = 1, #toRemove do
-        safeDestroy(highlights[toRemove[i]])
-        highlights[toRemove[i]] = nil
     end
 end
 
@@ -126,21 +115,21 @@ local function clearAll()
     for obj, highlight in pairs(highlights) do
         safeDestroy(highlight)
     end
-    highlights = {}
+    table.clear(highlights)
     
     for player, connections in pairs(playerConnections) do
         for _, connection in pairs(connections) do
             connection:Disconnect()
         end
     end
-    playerConnections = {}
+    table.clear(playerConnections)
     
     for player, connection in pairs(espConnections) do
         connection:Disconnect()
     end
-    espConnections = {}
+    table.clear(espConnections)
     
-    cachedKillers = {}
+    table.clear(cachedKillers)
     generatorsAdded = false
     enabled = false
 end
