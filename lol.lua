@@ -25,12 +25,6 @@ UICorner.Parent = button
 
 local highlights = {}
 
-local function safeDestroy(object)
-    if object and object.Parent then
-        object:Destroy()
-    end
-end
-
 local function createHighlight(obj, color)
     if not obj or not obj:IsDescendantOf(workspace) or highlights[obj] then return end
     
@@ -69,10 +63,10 @@ local function updateESP()
 end
 
 local function clearAll()
-    for obj, highlight in pairs(highlights) do
-        safeDestroy(highlight)
+    for _, highlight in pairs(highlights) do
+        highlight:Destroy()
     end
-    table.clear(highlights)
+    highlights = {}
 end
 
 local function toggleESP()
@@ -91,7 +85,7 @@ button.MouseButton1Click:Connect(toggleESP)
 
 localPlayer.CharacterAdded:Connect(function()
     clearAll()
-    safeDestroy(screenGui)
+    screenGui:Destroy()
     
     task.wait(1)
     
