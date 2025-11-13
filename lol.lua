@@ -1,10 +1,7 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 
 local enabled = false
-local cachedKillers = {}
-local killerPatterns = {killer = true}
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ESPGui"
@@ -27,38 +24,11 @@ UICorner.CornerRadius = UDim.new(0, 6)
 UICorner.Parent = button
 
 local highlights = {}
-local espConnections = {}
-local playerConnections = {}
-local buttonCooldown = false
 
 local function safeDestroy(object)
     if object and object.Parent then
         object:Destroy()
     end
-end
-
-local function stringContains(str, patterns)
-    if type(str) ~= "string" then return false end
-    local lowerStr = str:lower()
-    for word in pairs(patterns) do
-        if lowerStr:find(word, 1, true) then
-            return true
-        end
-    end
-    return false
-end
-
-local function isKiller(player)
-    if not player or player == localPlayer then return false end
-    
-    if cachedKillers[player] ~= nil then
-        return cachedKillers[player]
-    end
-    
-    cachedKillers[player] = stringContains(player.Name, killerPatterns) or
-                            stringContains(player.DisplayName, killerPatterns) or
-                            (player.Team and stringContains(player.Team.Name, killerPatterns))
-    return cachedKillers[player]
 end
 
 local function createHighlight(obj, color)
@@ -73,37 +43,24 @@ local function createHighlight(obj, color)
     highlights[obj] = highlight
 end
 
-local function cleanupUnusedHighlights()
-    for obj, highlight in pairs(highlights) do
-        if not obj or not obj.Parent or not obj:IsDescendantOf(workspace) then
-            safeDestroy(highlight)
-            highlights[obj] = nil
-        end
-    end
-end
-
-local function updatePlayerESP()
-    local players = Players:GetPlayers()
-    for i = 1, #players do
-        local player = players[i]
-        if player ~= localPlayer then
-            local character = player.Character
-            if character and character:IsDescendantOf(workspace) then
-                createHighlight(character, isKiller(player) and Color3.new(1, 0, 0) or Color3.new(0, 1, 0))
+local function updateESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Team then
+            local teamName = player.Team.Name:lower()
+            if teamName == "killer" or teamName == "survivors" then
+                local character = player.Character
+                if character and character:IsDescendantOf(workspace) then
+                    local color = teamName == "killer" and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
+                    createHighlight(character, color)
+                end
             end
         end
     end
-end
-
-local generatorsAdded = false
-local function addGeneratorESP()
-    if generatorsAdded then return end
-    generatorsAdded = true
     
     local descendants = workspace:GetDescendants()
     for i = 1, #descendants do
         local descendant = descendants[i]
-        if descendant:IsA("Model") and stringContains(descendant.Name, {generator = true, repair = true}) then
+        if descendant:IsA("Model") and descendant.Name:lower():find("generator") then
             if descendant:IsDescendantOf(workspace) then
                 createHighlight(descendant, Color3.new(1, 0.5, 0))
             end
@@ -116,123 +73,21 @@ local function clearAll()
         safeDestroy(highlight)
     end
     table.clear(highlights)
-    
-    for player, connections in pairs(playerConnections) do
-        for _, connection in pairs(connections) do
-            connection:Disconnect()
-        end
-    end
-    table.clear(playerConnections)
-    
-    for player, connection in pairs(espConnections) do
-        connection:Disconnect()
-    end
-    table.clear(espConnections)
-    
-    table.clear(cachedKillers)
-    generatorsAdded = false
-    enabled = false
 end
 
 local function toggleESP()
-    if buttonCooldown then return end
-    buttonCooldown = true
-    
     enabled = not enabled
     button.BackgroundColor3 = enabled and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(150, 0, 0)
     button.Text = enabled and "ON" or "OFF"
     
+    clearAll()
+    
     if enabled then
-        updatePlayerESP()
-        addGeneratorESP()
-    else
-        clearAll()
-    end
-    
-    task.delay(0.5, function()
-        buttonCooldown = false
-    end)
-end
-
-local function cleanupPlayer(player)
-    if playerConnections[player] then
-        for _, connection in pairs(playerConnections[player]) do
-            connection:Disconnect()
-        end
-        playerConnections[player] = nil
-    end
-    
-    if espConnections[player] then
-        espConnections[player]:Disconnect()
-        espConnections[player] = nil
-    end
-    
-    local character = player.Character
-    if character and highlights[character] then
-        safeDestroy(highlights[character])
-        highlights[character] = nil
-    end
-    
-    cachedKillers[player] = nil
-end
-
-local function setupPlayerConnections(player)
-    if player == localPlayer then return end
-    
-    playerConnections[player] = {}
-    
-    espConnections[player] = player.CharacterAdded:Connect(function(character)
-        if enabled then
-            cachedKillers[player] = nil
-            task.delay(1, updatePlayerESP)
-        end
-    end)
-    
-    table.insert(playerConnections[player], player.CharacterRemoving:Connect(function(character)
-        if character and highlights[character] then
-            safeDestroy(highlights[character])
-            highlights[character] = nil
-        end
-    end))
-    
-    if player.Character and enabled then
-        task.delay(0.5, updatePlayerESP)
+        updateESP()
     end
 end
 
 button.MouseButton1Click:Connect(toggleESP)
-
-local frameCounter, cleanupCounter = 0, 0
-RunService.Heartbeat:Connect(function()
-    if not enabled then return end
-    
-    frameCounter += 1
-    cleanupCounter += 1
-    
-    if frameCounter >= 180 then
-        updatePlayerESP()
-        frameCounter = 0
-    end
-    
-    if cleanupCounter >= 300 then
-        cleanupUnusedHighlights()
-        cleanupCounter = 0
-    end
-end)
-
-Players.PlayerAdded:Connect(function(player)
-    task.delay(1, function()
-        setupPlayerConnections(player)
-    end)
-end)
-
-Players.PlayerRemoving:Connect(cleanupPlayer)
-
-for _, player in ipairs(Players:GetPlayers()) do
-    task.delay(0.5, function()
-        setupPlayerConnections(player)
-    end)
-end
 
 localPlayer.CharacterAdded:Connect(function()
     clearAll()
@@ -261,10 +116,4 @@ localPlayer.CharacterAdded:Connect(function()
     UICorner.Parent = button
     
     button.MouseButton1Click:Connect(toggleESP)
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        task.delay(0.5, function()
-            setupPlayerConnections(player)
-        end)
-    end
 end)
