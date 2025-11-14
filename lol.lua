@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer
 
 local enabled = false
+local highlights = {}
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ESPGui"
@@ -19,11 +20,7 @@ button.TextColor3 = Color3.new(1, 1, 1)
 button.TextSize = 10
 button.Parent = screenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 6)
-UICorner.Parent = button
-
-local highlights = {}
+Instance.new("UICorner", button)
 
 local function createHighlight(obj, color)
     if not obj or not obj:IsDescendantOf(workspace) or highlights[obj] then return end
@@ -44,20 +41,15 @@ local function updateESP()
             if teamName == "killer" or teamName == "survivors" then
                 local character = player.Character
                 if character and character:IsDescendantOf(workspace) then
-                    local color = teamName == "killer" and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
-                    createHighlight(character, color)
+                    createHighlight(character, teamName == "killer" and Color3.new(1, 0, 0) or Color3.new(0, 1, 0))
                 end
             end
         end
     end
     
-    local descendants = workspace:GetDescendants()
-    for i = 1, #descendants do
-        local descendant = descendants[i]
-        if descendant:IsA("Model") and descendant.Name:lower():find("generator") then
-            if descendant:IsDescendantOf(workspace) then
-                createHighlight(descendant, Color3.new(1, 0.5, 0))
-            end
+    for _, descendant in ipairs(workspace:GetDescendants()) do
+        if descendant:IsA("Model") and descendant.Name:lower():find("generator") and descendant:IsDescendantOf(workspace) then
+            createHighlight(descendant, Color3.new(1, 0.5, 0))
         end
     end
 end
@@ -75,7 +67,6 @@ local function toggleESP()
     button.Text = enabled and "ON" or "OFF"
     
     clearAll()
-    
     if enabled then
         updateESP()
     end
@@ -105,9 +96,6 @@ localPlayer.CharacterAdded:Connect(function()
     button.TextSize = 10
     button.Parent = screenGui
     
-    UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 6)
-    UICorner.Parent = button
-    
+    Instance.new("UICorner", button)
     button.MouseButton1Click:Connect(toggleESP)
 end)
