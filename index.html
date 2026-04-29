@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding-top: env(safe-area-inset-top);
+        }
+
+        #auth-screen, #profile-screen {
+            width: 100%;
+            text-align: center;
+            flex-direction: column;
+            align-items: center;
+            display: none;
+        }
+
+        .visible { display: flex !important; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 200;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        .avatar span {
+            z-index: 1;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .username {
+            font-size: 14px;
+            color: #666;
+            margin: 0 0 4px 0;
+        }
+
+        .userid {
+            font-size: 12px;
+            color: #444;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 14px 50px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+            background: #cccccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="avatar">●</div>
+        <h1>Minimalist</h1>
+        <div class="username" style="margin-bottom: 40px;">System Protected</div>
+        <button class="btn" onclick="login()">Enter</button>
+    </div>
+
+    <div id="profile-screen">
+        <div class="avatar" id="avatar-wrap">
+            <span id="avatar-letter"></span>
+        </div>
+        <h1 id="user-name"></h1>
+        <div class="username" id="user-handle"></div>
+        <div class="userid" id="user-id"></div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        const SUPABASE_URL = "https://slcdrvjvnufwvgbtrpnq.supabase.co";
+        const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsY2Rydmp2bnVmd3ZnYnRycG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzUwNDAsImV4cCI6MjA5MzA1MTA0MH0.BOwUmxHuwAZ829BYFJxrv4DJA1Ozu0V0arxv2ORhvNs";
+
+        const SESSION_KEY = "tg_profile_session";
+
+        function getUrlParam(name) {
+            try {
+                const raw = new URLSearchParams(window.location.search).get(name);
+                if (!raw) return "";
+                return decodeURIComponent(raw);
+            } catch(e) { return ""; }
+        }
+
+        async function getAvatarFromSupabase(userId) {
+            try {
+                const resp = await fetch(
+                    `${SUPABASE_URL}/rest/v1/avatars?user_id=eq.${userId}&select=avatar_base64`,
+                    {
+                        headers: {
+                            "apikey": SUPABASE_ANON,
+                            "Authorization": `Bearer ${SUPABASE_ANON}`
+                        }
+                    }
+                );
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.length > 0 && data[0].avatar_base64) {
+                        return data[0].avatar_base64;
+                    }
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        async function uploadAvatarToSupabase(userId, username, firstName, base64Data) {
+            try {
+                const check = await fetch(
+                    `${SUPABASE_URL}/rest/v1/avatars?user_id=eq.${userId}&select=user_id`,
+                    {
+                        headers: {
+                            "apikey": SUPABASE_ANON,
+                            "Authorization": `Bearer ${SUPABASE_ANON}`
+                        }
+                    }
+                );
+                const exists = await check.json();
+                const body = JSON.stringify({
+                    user_id: userId,
+                    username: username || "",
+                    first_name: firstName || "",
+                    avatar_base64: base64Data
+                });
+                let resp;
+                if (exists && exists.length > 0) {
+                    resp = await fetch(
+                        `${SUPABASE_URL}/rest/v1/avatars?user_id=eq.${userId}`,
+                        {
+                            method: "PATCH",
+                            headers: {
+                                "apikey": SUPABASE_ANON,
+                                "Authorization": `Bearer ${SUPABASE_ANON}`,
+                                "Content-Type": "application/json",
+                                "Prefer": "return=representation"
+                            },
+                            body: JSON.stringify({
+                                avatar_base64: base64Data,
+                                username: username || "",
+                                first_name: firstName || ""
+                            })
+                        }
+                    );
+                } else {
+                    resp = await fetch(
+                        `${SUPABASE_URL}/rest/v1/avatars`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "apikey": SUPABASE_ANON,
+                                "Authorization": `Bearer ${SUPABASE_ANON}`,
+                                "Content-Type": "application/json",
+                                "Prefer": "return=representation"
+                            },
+                            body: body
+                        }
+                    );
+                }
+                return resp.ok;
+            } catch(e) {
+                return false;
+            }
+        }
+
+        function downloadAvatarFromUrl(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    try {
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                        resolve(dataUrl);
+                    } catch(e) {
+                        resolve(null);
+                    }
+                };
+                img.onerror = function() { resolve(null); };
+                img.src = url + "?_t=" + Date.now();
+            });
+        }
+
+        async function fetchAvatarFromTelegram(username) {
+            const sizes = [640, 320, 160];
+            for (const size of sizes) {
+                const url = `https://t.me/i/userpic/${size}/${username}.jpg`;
+                const result = await downloadAvatarFromUrl(url);
+                if (result && result.startsWith("data:image") && result.length > 500) {
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        async function showProfile(name, username, id, photoUrl) {
+            document.getElementById('user-name').innerText = name || "";
+            document.getElementById('user-handle').innerText = username ? "@" + username : "";
+            document.getElementById('user-id').innerText = id ? "ID: " + id : "";
+
+            const wrap = document.getElementById('avatar-wrap');
+            const letter = document.getElementById('avatar-letter');
+
+            function showLetter() {
+                const imgs = wrap.querySelectorAll('img');
+                imgs.forEach(el => el.remove());
+                letter.style.display = "";
+                letter.innerText = (name || "?").charAt(0).toUpperCase();
+            }
+
+            function setPhoto(src) {
+                if (!src || !src.startsWith("data:image") || src.length < 200) {
+                    showLetter();
+                    return;
+                }
+                const img = new Image();
+                img.onload = function() {
+                    const imgs = wrap.querySelectorAll('img');
+                    imgs.forEach(el => el.remove());
+                    letter.style.display = "none";
+                    wrap.appendChild(img);
+                    img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;position:absolute;top:0;left:0;z-index:2;";
+                };
+                img.onerror = function() {
+                    showLetter();
+                };
+                img.src = src;
+            }
+
+            const botPhoto = getUrlParam("photo");
+            if (botPhoto && botPhoto.startsWith("data:image") && botPhoto.length > 200) {
+                setPhoto(botPhoto);
+                if (id) {
+                    uploadAvatarToSupabase(parseInt(id), username, name, botPhoto);
+                }
+            } else if (id) {
+                const supabaseAvatar = await getAvatarFromSupabase(parseInt(id));
+                if (supabaseAvatar && supabaseAvatar.startsWith("data:image")) {
+                    setPhoto(supabaseAvatar);
+                } else if (username) {
+                    const tgAvatar = await fetchAvatarFromTelegram(username);
+                    if (tgAvatar) {
+                        setPhoto(tgAvatar);
+                        uploadAvatarToSupabase(parseInt(id), username, name, tgAvatar);
+                    } else {
+                        showLetter();
+                    }
+                } else {
+                    showLetter();
+                }
+            } else if (username) {
+                const tgAvatar = await fetchAvatarFromTelegram(username);
+                if (tgAvatar) {
+                    setPhoto(tgAvatar);
+                } else {
+                    showLetter();
+                }
+            } else {
+                showLetter();
+            }
+
+            document.getElementById('auth-screen').classList.remove('visible');
+            document.getElementById('profile-screen').classList.add('visible');
+        }
+
+        function login() {
+            const user = tg.initDataUnsafe?.user;
+            const name = user?.first_name || "";
+            const username = user?.username || "";
+            const id = user?.id ? String(user.id) : "";
+
+            const session = { name, username, id, ts: Date.now() };
+            try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e) {}
+
+            tg.HapticFeedback.impactOccurred('medium');
+            showProfile(name, username, id, "");
+        }
+
+        window.onload = () => {
+            tg.ready();
+
+            let restored = false;
+            try {
+                const raw = localStorage.getItem(SESSION_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    if (s && s.name) {
+                        showProfile(s.name, s.username, s.id, "");
+                        restored = true;
+                    }
+                }
+            } catch(e) {}
+
+            if (!restored) {
+                const user = tg.initDataUnsafe?.user;
+                if (user && user.first_name) {
+                    login();
+                } else {
+                    document.getElementById('auth-screen').classList.add('visible');
+                }
+            }
+        };
+    </script>
+</body>
+</html>
