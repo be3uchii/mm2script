@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding-top: env(safe-area-inset-top);
+        }
+
+        #auth-screen, #profile-screen {
+            width: 100%;
+            text-align: center;
+            flex-direction: column;
+            align-items: center;
+            display: none;
+        }
+
+        .visible { display: flex !important; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 200;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .username {
+            font-size: 14px;
+            color: #666;
+            margin: 0 0 4px 0;
+        }
+
+        .userid {
+            font-size: 12px;
+            color: #444;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 14px 50px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+            background: #cccccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="avatar">●</div>
+        <h1>Minimalist</h1>
+        <div class="username" style="margin-bottom: 40px;">System Protected</div>
+        <button class="btn" onclick="login()">Enter</button>
+    </div>
+
+    <div id="profile-screen">
+        <div class="avatar" id="avatar-wrap">
+            <span id="avatar-letter"></span>
+        </div>
+        <h1 id="user-name"></h1>
+        <div class="username" id="user-handle"></div>
+        <div class="userid" id="user-id"></div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        const SESSION_KEY = "tg_profile_session";
+
+        function getUrlParam(name) {
+            try { return new URLSearchParams(window.location.search).get(name) || ""; }
+            catch(e) { return ""; }
+        }
+
+        function showProfile(name, username, id, photoUrl) {
+            document.getElementById('user-name').innerText = name || "";
+            document.getElementById('user-handle').innerText = username ? "@" + username : "";
+            document.getElementById('user-id').innerText = id ? "ID: " + id : "";
+
+            const wrap = document.getElementById('avatar-wrap');
+            const letter = document.getElementById('avatar-letter');
+
+            function showLetter() {
+                letter.style.display = "";
+                letter.innerText = (name || "?").charAt(0).toUpperCase();
+            }
+
+            function tryImg(src, fallbacks) {
+                if (!src) {
+                    if (fallbacks.length) tryImg(fallbacks.shift(), fallbacks);
+                    else showLetter();
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => {
+                    letter.style.display = "none";
+                    wrap.innerHTML = "";
+                    wrap.appendChild(img);
+                    img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;";
+                };
+                img.onerror = () => {
+                    if (fallbacks.length) tryImg(fallbacks.shift(), fallbacks);
+                    else showLetter();
+                };
+                img.src = src + (src.includes("?") ? "&" : "?") + "_t=" + Date.now();
+            }
+
+            const botPhoto = getUrlParam("photo");
+            const svgUrl = username ? `https://t.me/i/userpic/160/${username}.svg` : "";
+            const jpgUrl = username ? `https://t.me/i/userpic/320/${username}.jpg` : "";
+
+            const sources = [botPhoto, svgUrl, jpgUrl].filter(Boolean);
+            tryImg(sources.shift(), sources);
+
+            document.getElementById('auth-screen').classList.remove('visible');
+            document.getElementById('profile-screen').classList.add('visible');
+        }
+
+        function login() {
+            const user = tg.initDataUnsafe?.user;
+            const name = user?.first_name || "";
+            const username = user?.username || "";
+            const id = user?.id ? String(user.id) : "";
+
+            const session = { name, username, id, ts: Date.now() };
+            try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e) {}
+
+            tg.HapticFeedback.impactOccurred('medium');
+            showProfile(name, username, id, "");
+        }
+
+        window.onload = () => {
+            tg.ready();
+
+            let restored = false;
+            try {
+                const raw = localStorage.getItem(SESSION_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    if (s && s.name) {
+                        showProfile(s.name, s.username, s.id, "");
+                        restored = true;
+                    }
+                }
+            } catch(e) {}
+
+            if (!restored) {
+                const user = tg.initDataUnsafe?.user;
+                if (user && user.first_name) {
+                    login();
+                } else {
+                    document.getElementById('auth-screen').classList.add('visible');
+                }
+            }
+        };
+    </script>
+</body>
+</html>
