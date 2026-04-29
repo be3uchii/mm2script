@@ -1,139 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Profile</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         body {
-            width: 100vw;
-            height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #000000;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            height: 100vh;
             overflow: hidden;
             padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            color: #ffffff;
         }
-        .avatar {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            background: #1a1a1a;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 56px;
-            font-weight: 700;
-            color: #ffffff;
-            border: 3px solid #333333;
-            overflow: hidden;
-            animation: fadeIn 0.5s ease-out;
-        }
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .name {
-            font-size: 28px;
-            font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 8px;
-            animation: fadeIn 0.6s ease-out;
-        }
-        .username {
-            font-size: 16px;
-            color: #666666;
-            margin-bottom: 40px;
-            animation: fadeIn 0.7s ease-out;
-        }
-        .stats {
-            display: flex;
-            gap: 40px;
-            animation: fadeIn 0.8s ease-out;
-        }
-        .stat {
+
+        #screen {
             text-align: center;
+            width: 100%;
+            animation: fadeIn 0.6s ease;
         }
-        .stat-value {
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 1px solid #333;
+            margin: 0 auto 25px;
+            background-size: cover;
+            background-position: center;
+            background-color: #111;
+        }
+
+        h1 {
             font-size: 22px;
-            font-weight: 700;
-            color: #ffffff;
+            font-weight: 400;
+            letter-spacing: -0.5px;
             margin-bottom: 5px;
         }
-        .stat-label {
-            font-size: 12px;
-            color: #666666;
+
+        .id-label {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 50px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        .btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 15px 60px;
+            border-radius: 2px;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
         }
+
+        .btn:active { background: #888; }
     </style>
 </head>
 <body>
-    <div id="avatar" class="avatar"></div>
-    <div id="name" class="name">Загрузка...</div>
-    <div id="username" class="username"></div>
-    <div class="stats">
-        <div class="stat">
-            <div id="userId" class="stat-value">—</div>
-            <div class="stat-label">ID</div>
-        </div>
-        <div class="stat">
-            <div id="premium" class="stat-value">—</div>
-            <div class="stat-label">Premium</div>
-        </div>
+
+    <div id="screen">
+        <div id="avatar" class="profile-img"></div>
+        <h1 id="name">UNNAMED</h1>
+        <div id="id" class="id-label">ID: 00000000</div>
+        <button class="btn" onclick="tg.close()">Exit</button>
     </div>
+
     <script>
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-        Telegram.WebApp.setBackgroundColor('#000000');
-        Telegram.WebApp.setHeaderColor('#000000');
-        
-        const user = Telegram.WebApp.initDataUnsafe.user;
-        
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Парсим параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const photoUrl = urlParams.get('photo');
+
+        const user = tg.initDataUnsafe?.user;
         if (user) {
-            const firstName = user.first_name || '';
-            const lastName = user.last_name || '';
-            const fullName = (firstName + ' ' + lastName).trim() || 'Пользователь';
-            const username = user.username ? '@' + user.username : '';
-            const userId = user.id;
-            const initial = firstName.charAt(0) || 'U';
+            document.getElementById('name').innerText = user.first_name.toUpperCase();
+            document.getElementById('id').innerText = "ID: " + user.id;
             
-            document.getElementById('name').textContent = fullName;
-            document.getElementById('username').textContent = username;
-            document.getElementById('userId').textContent = userId;
-            document.getElementById('premium').textContent = user.is_premium ? '✓' : '✗';
-            
-            fetch(`YOUR_NGROK_URL/api/user/${userId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.photo_url) {
-                        document.getElementById('avatar').innerHTML = `<img src="${data.photo_url}" alt="Avatar">`;
-                    } else {
-                        document.getElementById('avatar').textContent = initial;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('avatar').textContent = initial;
-                });
+            if (photoUrl && photoUrl !== "null") {
+                document.getElementById('avatar').style.backgroundImage = `url('${photoUrl}')`;
+            } else {
+                document.getElementById('avatar').style.display = 'none';
+            }
         }
+
+        tg.ready();
     </script>
 </body>
 </html>
