@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding-top: env(safe-area-inset-top);
+        }
+
+        #auth-screen, #profile-screen {
+            width: 100%;
+            text-align: center;
+            flex-direction: column;
+            align-items: center;
+            display: none;
+        }
+
+        .visible { display: flex !important; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 200;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .username {
+            font-size: 14px;
+            color: #666;
+            margin: 0 0 4px 0;
+        }
+
+        .userid {
+            font-size: 12px;
+            color: #444;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 14px 50px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+            background: #cccccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="avatar">●</div>
+        <h1>Minimalist</h1>
+        <div class="username" style="margin-bottom: 40px;">System Protected</div>
+        <button class="btn" onclick="login()">Enter</button>
+    </div>
+
+    <div id="profile-screen">
+        <div class="avatar" id="avatar-wrap">
+            <span id="avatar-letter"></span>
+        </div>
+        <h1 id="user-name"></h1>
+        <div class="username" id="user-handle"></div>
+        <div class="userid" id="user-id"></div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        const SESSION_KEY = "tg_profile_session";
+        const AVATAR_CACHE_KEY = "tg_avatar_data";
+
+        function getUrlParam(name) {
+            try {
+                const raw = new URLSearchParams(window.location.search).get(name);
+                if (!raw) return "";
+                return decodeURIComponent(raw);
+            } catch(e) { return ""; }
+        }
+
+        function getCachedAvatar(userId) {
+            try {
+                const cache = JSON.parse(localStorage.getItem(AVATAR_CACHE_KEY) || "{}");
+                if (cache[userId] && cache[userId].data && cache[userId].data.startsWith("data:image")) {
+                    return cache[userId].data;
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        function setCachedAvatar(userId, dataUrl) {
+            try {
+                const cache = JSON.parse(localStorage.getItem(AVATAR_CACHE_KEY) || "{}");
+                cache[userId] = { data: dataUrl, ts: Date.now() };
+                localStorage.setItem(AVATAR_CACHE_KEY, JSON.stringify(cache));
+            } catch(e) {}
+        }
+
+        function fetchTgPhotoAllVariants(username, callback) {
+            const sizes = [640, 320, 160, 500, 1000];
+            const urls = [];
+            for (const size of sizes) {
+                urls.push(`https://t.me/i/userpic/${size}/${username}.jpg`);
+                urls.push(`https://t.me/i/userpic/${size}/${username}.jpeg`);
+            }
+            urls.push(`https://t.me/i/userpic/${username}.jpg`);
+            urls.push(`https://t.me/i/userpic/${username}.jpeg`);
+
+            let idx = 0;
+            function tryNext() {
+                if (idx >= urls.length) { callback(null); return; }
+                const url = urls[idx];
+                idx++;
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.min(img.width, 640);
+                    canvas.height = Math.min(img.height, 640);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    try {
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                        callback(dataUrl);
+                    } catch(e) {
+                        tryNext();
+                    }
+                };
+                img.onerror = function() { tryNext(); };
+                img.src = url + "?_t=" + Date.now();
+            }
+            tryNext();
+        }
+
+        function fetchTgPhotoApi(userId, callback) {
+            const botToken = "8789033963:AAFZVv9yaC8okV-G3MkuM_YihzHQGE5xHz0";
+            fetch(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${userId}&limit=1`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok && data.result.photos && data.result.photos.length > 0) {
+                        const lastPhoto = data.result.photos[0];
+                        const biggest = lastPhoto[lastPhoto.length - 1];
+                        return fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${biggest.file_id}`);
+                    }
+                    throw new Error("no photos");
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok && data.result.file_path) {
+                        return fetch(`https://api.telegram.org/file/bot${botToken}/${data.result.file_path}`);
+                    }
+                    throw new Error("no file");
+                })
+                .then(r => {
+                    if (!r.ok) throw new Error("download failed");
+                    return r.blob();
+                })
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        if (reader.result && reader.result.startsWith("data:image")) {
+                            callback(reader.result);
+                        } else {
+                            callback(null);
+                        }
+                    };
+                    reader.onerror = () => callback(null);
+                    reader.readAsDataURL(blob);
+                })
+                .catch(() => callback(null));
+        }
+
+        function showProfile(name, username, id, photoUrl) {
+            document.getElementById('user-name').innerText = name || "";
+            document.getElementById('user-handle').innerText = username ? "@" + username : "";
+            document.getElementById('user-id').innerText = id ? "ID: " + id : "";
+
+            const wrap = document.getElementById('avatar-wrap');
+            const letter = document.getElementById('avatar-letter');
+
+            function hideLetter() {
+                letter.style.display = "none";
+            }
+
+            function showLetter() {
+                const existingImgs = wrap.querySelectorAll('img');
+                existingImgs.forEach(el => el.remove());
+                letter.style.display = "";
+                letter.innerText = (name || "?").charAt(0).toUpperCase();
+            }
+
+            function setPhoto(src) {
+                if (!src || !src.startsWith("data:image")) {
+                    showLetter();
+                    return;
+                }
+                const img = new Image();
+                img.onload = function() {
+                    hideLetter();
+                    const existingImgs = wrap.querySelectorAll('img');
+                    existingImgs.forEach(el => el.remove());
+                    wrap.appendChild(img);
+                    img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;position:absolute;top:0;left:0;";
+                };
+                img.onerror = function() {
+                    showLetter();
+                };
+                img.src = src;
+            }
+
+            const botPhoto = getUrlParam("photo");
+            if (botPhoto && botPhoto.startsWith("data:image") && botPhoto.length > 200) {
+                setPhoto(botPhoto);
+                if (id) setCachedAvatar(id, botPhoto);
+                document.getElementById('auth-screen').classList.remove('visible');
+                document.getElementById('profile-screen').classList.add('visible');
+                return;
+            }
+
+            if (id) {
+                const cached = getCachedAvatar(id);
+                if (cached) {
+                    setPhoto(cached);
+                    document.getElementById('auth-screen').classList.remove('visible');
+                    document.getElementById('profile-screen').classList.add('visible');
+                    return;
+                }
+            }
+
+            function tryAllMethods() {
+                if (username) {
+                    fetchTgPhotoAllVariants(username, function(photoData) {
+                        if (photoData && photoData.startsWith("data:image")) {
+                            setPhoto(photoData);
+                            if (id) setCachedAvatar(id, photoData);
+                        } else if (id) {
+                            fetchTgPhotoApi(id, function(apiPhoto) {
+                                if (apiPhoto && apiPhoto.startsWith("data:image")) {
+                                    setPhoto(apiPhoto);
+                                    setCachedAvatar(id, apiPhoto);
+                                } else {
+                                    showLetter();
+                                }
+                            });
+                        } else {
+                            showLetter();
+                        }
+                    });
+                } else if (id) {
+                    fetchTgPhotoApi(id, function(apiPhoto) {
+                        if (apiPhoto && apiPhoto.startsWith("data:image")) {
+                            setPhoto(apiPhoto);
+                            setCachedAvatar(id, apiPhoto);
+                        } else {
+                            showLetter();
+                        }
+                    });
+                } else {
+                    showLetter();
+                }
+            }
+
+            tryAllMethods();
+            document.getElementById('auth-screen').classList.remove('visible');
+            document.getElementById('profile-screen').classList.add('visible');
+        }
+
+        function login() {
+            const user = tg.initDataUnsafe?.user;
+            const name = user?.first_name || "";
+            const username = user?.username || "";
+            const id = user?.id ? String(user.id) : "";
+
+            const session = { name, username, id, ts: Date.now() };
+            try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e) {}
+
+            tg.HapticFeedback.impactOccurred('medium');
+            showProfile(name, username, id, "");
+        }
+
+        window.onload = () => {
+            tg.ready();
+
+            let restored = false;
+            try {
+                const raw = localStorage.getItem(SESSION_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    if (s && s.name) {
+                        showProfile(s.name, s.username, s.id, "");
+                        restored = true;
+                    }
+                }
+            } catch(e) {}
+
+            if (!restored) {
+                const user = tg.initDataUnsafe?.user;
+                if (user && user.first_name) {
+                    login();
+                } else {
+                    document.getElementById('auth-screen').classList.add('visible');
+                }
+            }
+        };
+    </script>
+</body>
+</html>
